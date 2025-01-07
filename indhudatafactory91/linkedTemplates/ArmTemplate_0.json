@@ -1,0 +1,1119 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "indhudatafactory91"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"AzureSqlDatabase1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://indhustorage2.dfs.core.windows.net/"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "indhuserver1.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "AzureSQLdb"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "Indhu"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pip_append_variable')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "array_var1",
+							"value": {
+								"value": "@variables('array_var')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Append variable1",
+						"type": "AppendVariable",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "array_var",
+							"value": {
+								"value": "@int(5)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Set variable2",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Append variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "array_var1",
+							"value": {
+								"value": "@variables('array_var')",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"array_var": {
+						"type": "Array",
+						"defaultValue": [
+							1,
+							2,
+							3,
+							4
+						]
+					},
+					"array_var1": {
+						"type": "Array"
+					},
+					"var_3": {
+						"type": "Integer"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-09T02:53:30Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pip_until')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Until1",
+						"type": "Until",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@greaterOrEquals(int(variables('var')),3 )",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Set variable1",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "temp",
+										"value": {
+											"value": "@variables('var')",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "Set variable2",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "Set variable1",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "var",
+										"value": {
+											"value": "@string(add(int(variables('temp')),1))",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"timeout": "0.12:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"var": {
+						"type": "String",
+						"defaultValue": "1"
+					},
+					"temp": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-26T02:36:48Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "linked service gen2",
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]",
+					"database": "[parameters('AzureSqlDatabase1_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('AzureSqlDatabase1_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SelfHostedIR')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "Employees"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTableDELIVERY_TYPE_REF')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Delivery_Type_Ref_key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Delivery_Type_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Delivery_Type",
+						"type": "varchar"
+					},
+					{
+						"name": "STG_CREATE_DATE",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "DELIVERY_TYPE_REF"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTablePAYMENT_REF')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Payment_Ref_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Payment_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Payment_Type",
+						"type": "varchar"
+					},
+					{
+						"name": "STG_CREATE_DATE",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "PAYMENT_REF"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable_PRODUCT_TOPPINGS_DIM')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Product_Topping_Dim_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Product_Topping_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Topping_Name",
+						"type": "varchar"
+					},
+					{
+						"name": "Topping_Price",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 2
+					},
+					{
+						"name": "Is_Active",
+						"type": "varchar"
+					},
+					{
+						"name": "Effective_Date",
+						"type": "date"
+					},
+					{
+						"name": "END_DATE",
+						"type": "date"
+					},
+					{
+						"name": "Flag",
+						"type": "varchar"
+					},
+					{
+						"name": "DM_CREATE_DATE",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "PRODUCT_TOPPINGS_DIM"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable_PROMOTION_SCD3')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "PROMOTION_DIM_KEY",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Promotion_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Promotion_Name",
+						"type": "varchar"
+					},
+					{
+						"name": "previous_Promotion_Name",
+						"type": "varchar"
+					},
+					{
+						"name": "Promotion_Type",
+						"type": "varchar"
+					},
+					{
+						"name": "previous_Promotion_Type",
+						"type": "varchar"
+					},
+					{
+						"name": "Discount_amount",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 2
+					},
+					{
+						"name": "previous_Discount_amount",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 2
+					},
+					{
+						"name": "START_DATE",
+						"type": "date"
+					},
+					{
+						"name": "Previous_START_DATE",
+						"type": "date"
+					},
+					{
+						"name": "END_DATE",
+						"type": "date"
+					},
+					{
+						"name": "previous_END_DATE",
+						"type": "date"
+					},
+					{
+						"name": "stg_CREATE_DATE",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "PROMOTION_DIM"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable_SALES_FACT')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Order_Line_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Order_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CUSTOMER_DIM_KEY",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Payment_Ref_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "channel_ref_key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Delivery_Type_Ref_key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Topping_Dim_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Location_Dim_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "product_dim_kEY",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "PROMOTION_DIM_KEY",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Date_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Order_Date",
+						"type": "date"
+					},
+					{
+						"name": "Order_Status",
+						"type": "varchar"
+					},
+					{
+						"name": "Quantity",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 2
+					},
+					{
+						"name": "Unit_price",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 2
+					},
+					{
+						"name": "Topping_Price",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 2
+					},
+					{
+						"name": "Promotion_Amount",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 3
+					},
+					{
+						"name": "DM_create_date",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "SALES_FACT"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable_fact_member_loyality_program')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "member_loyality_program_key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "order_id",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Member_id",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CUSTOMER_DIM_KEY",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Location_Dim_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Date_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Total_Points_Earned",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Remaining_points",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Is_Active",
+						"type": "varchar"
+					},
+					{
+						"name": "DM_create_date",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "fact_member_loyality_program"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTable_location_dim_scd')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Loc_Dim_Key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Store_Location_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Store_Name",
+						"type": "varchar"
+					},
+					{
+						"name": "Store_Address",
+						"type": "varchar"
+					},
+					{
+						"name": "Store_Open_Time",
+						"type": "varchar"
+					},
+					{
+						"name": "Store_Close_Time",
+						"type": "varchar"
+					},
+					{
+						"name": "State_Name",
+						"type": "varchar"
+					},
+					{
+						"name": "FLAG",
+						"type": "varchar"
+					},
+					{
+						"name": "DM_CREATE_DATE",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "LOCATION_DIM_SCD"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTablechannelref')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Channel_ref_key",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Channel_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Channel_Type",
+						"type": "varchar"
+					},
+					{
+						"name": "STG_CREATE_DATE",
+						"type": "date"
+					}
+				],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "CHANNEL_REF"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "STG_CUSTOMER_ADDRESS",
+						"folderPath": "target/AzureProject/Stg",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "EMPLOYEE_ID",
+						"type": "String"
+					},
+					{
+						"name": "FIRST_NAME",
+						"type": "String"
+					},
+					{
+						"name": "LAST_NAME",
+						"type": "String"
+					},
+					{
+						"name": "EMAIL",
+						"type": "String"
+					},
+					{
+						"name": "PHONE_NUMBER",
+						"type": "String"
+					},
+					{
+						"name": "HIRE_DATE",
+						"type": "String"
+					},
+					{
+						"name": "JOB_ID",
+						"type": "String"
+					},
+					{
+						"name": "SALARY",
+						"type": "String"
+					},
+					{
+						"name": "COMMISSION_PCT",
+						"type": "String"
+					},
+					{
+						"name": "MANAGER_ID",
+						"type": "String"
+					},
+					{
+						"name": "DEPARTMENT_ID",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText2')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "source",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "Category",
+						"type": "String"
+					},
+					{
+						"name": "Status",
+						"type": "String"
+					},
+					{
+						"name": "Error",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cust_address')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "STG_CUSTOMER_ADDRESS",
+						"folderPath": "target/AzureProject/Stg",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CUSTOMER_ADDRESS_ID",
+						"type": "String"
+					},
+					{
+						"name": "ADDRESS_LANE1",
+						"type": "String"
+					},
+					{
+						"name": "ADDRESS_LANE_2",
+						"type": "String"
+					},
+					{
+						"name": "CITY_NAME",
+						"type": "String"
+					},
+					{
+						"name": "STATE_NAME",
+						"type": "String"
+					},
+					{
+						"name": "COUNTRY_NAME",
+						"type": "String"
+					},
+					{
+						"name": "ZIP_CODE",
+						"type": "String"
+					},
+					{
+						"name": "GATE_CODE",
+						"type": "String"
+					},
+					{
+						"name": "ADDRESS_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "ADDRESS_STATUS",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_ID",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cust_hutlover')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "STG_HUT_LOVER",
+						"folderPath": "target/AzureProject/Stg",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "HUT_LOVERS_ID",
+						"type": "String"
+					},
+					{
+						"name": "JOINING_DATE",
+						"type": "String"
+					},
+					{
+						"name": "IS_ACTIVE",
+						"type": "String"
+					},
+					{
+						"name": "MEMBER_ID",
+						"type": "String"
+					},
+					{
+						"name": "CUSTMOER_ID",
+						"type": "String"
+					},
+					{
+						"name": "CREATE_USER_ID",
+						"type": "String"
+					},
+					{
+						"name": "CREATE_DATE",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/customer')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "STG_CUSTOMERS",
+						"folderPath": "target/AzureProject/Stg",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CUSTOMER_ID",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_FIRST_NAME",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_LAST_NAME",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_DOB",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "IS_LOYAL",
+						"type": "String"
+					},
+					{
+						"name": "FIRST_PURCHASE_DATE",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/customer_dim')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "hr",
+					"table": "customer_dim"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		}
+	]
+}
