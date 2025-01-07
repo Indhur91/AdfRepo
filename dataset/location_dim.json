@@ -1,0 +1,17 @@
+{
+	"name": "location_dim",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "hr",
+			"table": "location_dim"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

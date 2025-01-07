@@ -1,0 +1,9 @@
+{
+	"name": "indhudatafactory91",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "16f7bfb1-6ed3-4fbf-87b4-7566f18e1722",
+		"tenantId": "da11d605-0d10-4ecb-9dcd-6bf256b58bc4"
+	}
+}

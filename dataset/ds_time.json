@@ -1,0 +1,66 @@
+{
+	"name": "ds_time",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "TIME_DATA",
+				"folderPath": "target/AzureProject/Stg",
+				"fileSystem": "data"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "TIME_KEY",
+				"type": "String"
+			},
+			{
+				"name": "TIME_24HOUR",
+				"type": "String"
+			},
+			{
+				"name": "TIME_12HOUR",
+				"type": "String"
+			},
+			{
+				"name": "AM_PM_INDICATOR",
+				"type": "String"
+			},
+			{
+				"name": "MORNING_FLAG",
+				"type": "String"
+			},
+			{
+				"name": "LUNCHTIME_FLAG",
+				"type": "String"
+			},
+			{
+				"name": "AFTERNOON_FLAG",
+				"type": "String"
+			},
+			{
+				"name": "DINNERTIME_FLAG",
+				"type": "String"
+			},
+			{
+				"name": "EVENING_FLAG",
+				"type": "String"
+			},
+			{
+				"name": "LATE_EVENING_FLAG",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

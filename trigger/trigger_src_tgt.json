@@ -1,0 +1,25 @@
+{
+	"name": "trigger_src_tgt",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "copy_src_tgt_wait_activity",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 15,
+				"startTime": "2024-10-02T22:49:00",
+				"endTime": "2024-10-04T02:40:00",
+				"timeZone": "Eastern Standard Time"
+			}
+		}
+	}
+}

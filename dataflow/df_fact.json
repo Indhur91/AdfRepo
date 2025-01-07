@@ -1,0 +1,450 @@
+{
+	"name": "df_fact",
+	"properties": {
+		"folder": {
+			"name": "PROJECT_DATAFLOW"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_stg_order_line",
+						"type": "DatasetReference"
+					},
+					"name": "order"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_order_line",
+						"type": "DatasetReference"
+					},
+					"name": "OrderLines"
+				},
+				{
+					"dataset": {
+						"referenceName": "customer_dim",
+						"type": "DatasetReference"
+					},
+					"name": "customer"
+				},
+				{
+					"dataset": {
+						"referenceName": "location_dim",
+						"type": "DatasetReference"
+					},
+					"name": "locationdim"
+				},
+				{
+					"dataset": {
+						"referenceName": "product_dim",
+						"type": "DatasetReference"
+					},
+					"name": "productdim"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable_PRODUCT_TOPPINGS_DIM",
+						"type": "DatasetReference"
+					},
+					"name": "ProductTopping"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable_PROMOTION_SCD3",
+						"type": "DatasetReference"
+					},
+					"name": "promotions"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTablePAYMENT_REF",
+						"type": "DatasetReference"
+					},
+					"name": "payment"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTablechannelref",
+						"type": "DatasetReference"
+					},
+					"name": "channel"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTableDELIVERY_TYPE_REF",
+						"type": "DatasetReference"
+					},
+					"name": "DeliveryType"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_date",
+						"type": "DatasetReference"
+					},
+					"name": "date"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable_SALES_FACT",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "join1"
+				},
+				{
+					"name": "join2"
+				},
+				{
+					"name": "join3"
+				},
+				{
+					"name": "join4"
+				},
+				{
+					"name": "join5"
+				},
+				{
+					"name": "join6"
+				},
+				{
+					"name": "join7"
+				},
+				{
+					"name": "join8"
+				},
+				{
+					"name": "join9"
+				},
+				{
+					"name": "join10"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ORDER_ID as integer,",
+				"          ORDER_DATE as string,",
+				"          ORDER_STATUS as string,",
+				"          TOTAL_AMOUNT as double,",
+				"          TOTAL_TAX as double,",
+				"          TIPS as double,",
+				"          TOTAL_QUANTITY as short,",
+				"          DELIVERY_ID as short,",
+				"          CHANNEL_ID as short,",
+				"          STORE_LOCATION_ID as short,",
+				"          CUSTOMER_ID as short,",
+				"          PAYMENT_ID as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> order",
+				"source(output(",
+				"          ORDER_LINE_ID as integer,",
+				"          UNIT_PRICE as string,",
+				"          QUANTITY as string,",
+				"          PROMOTION_AMOUNT as string,",
+				"          PROMOTION_ID as integer,",
+				"          ORDER_ID as integer,",
+				"          PRODUCT_ID as integer,",
+				"          PRODUCT_TOPPING_ID as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> OrderLines",
+				"source(output(",
+				"          CUSTOMER_ID as short,",
+				"          CUSTOMER_FIRST_NAME as string,",
+				"          CUSTOMER_LAST_NAME as string,",
+				"          IS_LOYAL as boolean,",
+				"          PRIMARY_EMAIL as string,",
+				"          SECONDARY_EMAIL as string,",
+				"          PRIMARY_PHONE_NUMBER as string,",
+				"          SECONDARY_PHONE_NUMBER as string,",
+				"          R_Address_Lane1 as string,",
+				"          R_Address_Lane_2 as string,",
+				"          R_City_Name as string,",
+				"          R_State_Name as string,",
+				"          R_Country_Name as string,",
+				"          R_Zip_Code as integer,",
+				"          R_Gate_Code as integer,",
+				"          O_ADDRESS_LANE1 as string,",
+				"          O_ADDRESS_LANE2 as string,",
+				"          O_CITY_NAME as string,",
+				"          O_STATE_NAME as string,",
+				"          O_COUNTRY_NAME as string,",
+				"          O_ZIP_CODE as integer,",
+				"          O_GATE_CODE as short,",
+				"          JOINING_DATE as string,",
+				"          CUSTOMER_DIM_KEY as long,",
+				"          STG_CREATE_DATE as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> customer",
+				"source(output(",
+				"          Location_Dim_Key as long,",
+				"          STORE_LOCATION_ID as short,",
+				"          STORE_NAME as string,",
+				"          STORE_ADDRESS as string,",
+				"          STORE_PHONE_NUMBER as string,",
+				"          STORE_OPEN_TIME as string,",
+				"          STORE_CLOSE_TIME as string,",
+				"          STATE_NAME as string,",
+				"          STATE_COUNTRY as string,",
+				"          create_user_date as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> locationdim",
+				"source(output(",
+				"          PRODUCT_ID as integer,",
+				"          PRODUCT_NAME as string,",
+				"          PRODUCT_PRICE as string,",
+				"          PRODUCT_DESCRIPTION as string,",
+				"          IS_ACTIVE as string,",
+				"          PRODUCT_SUBCATEGORY_ID as string,",
+				"          PRODUCT_SUBCATEGORY_NAME as string,",
+				"          PRODUCT_SIZE as string,",
+				"          PRODUCT_CATEGORY_ID as string,",
+				"          PRODUCT_CATEGORY_NAME as string,",
+				"          product_dim_key as long,",
+				"          stg_create_date as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> productdim",
+				"source(output(",
+				"          Product_Topping_Dim_Key as integer,",
+				"          Product_Topping_ID as integer,",
+				"          Topping_Name as string,",
+				"          Topping_Price as decimal(5,2),",
+				"          Is_Active as string,",
+				"          Effective_Date as date,",
+				"          END_DATE as date,",
+				"          Flag as string,",
+				"          DM_CREATE_DATE as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ProductTopping",
+				"source(output(",
+				"          PROMOTION_DIM_KEY as integer,",
+				"          Promotion_ID as integer,",
+				"          Promotion_Name as string,",
+				"          previous_Promotion_Name as string,",
+				"          Promotion_Type as string,",
+				"          previous_Promotion_Type as string,",
+				"          Discount_amount as decimal(5,2),",
+				"          previous_Discount_amount as decimal(5,2),",
+				"          START_DATE as date,",
+				"          Previous_START_DATE as date,",
+				"          END_DATE as date,",
+				"          previous_END_DATE as date,",
+				"          stg_CREATE_DATE as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> promotions",
+				"source(output(",
+				"          Payment_Ref_Key as integer,",
+				"          Payment_ID as integer,",
+				"          Payment_Type as string,",
+				"          STG_CREATE_DATE as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> payment",
+				"source(output(",
+				"          Channel_ref_key as integer,",
+				"          Channel_ID as integer,",
+				"          Channel_Type as string,",
+				"          STG_CREATE_DATE as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> channel",
+				"source(output(",
+				"          Delivery_Type_Ref_key as integer,",
+				"          Delivery_Type_ID as integer,",
+				"          Delivery_Type as string,",
+				"          STG_CREATE_DATE as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DeliveryType",
+				"source(output(",
+				"          DATE_KEY as string,",
+				"          DAY_YYYY_MM_DD as string,",
+				"          DAY_US_MM_DD_YYYY as string,",
+				"          DAY_US_LONG as string,",
+				"          DAY_US_M_D_YY as string,",
+				"          WEEK_SHORT as string,",
+				"          WEEK_NUMBER as string,",
+				"          WEEK_LONG as string,",
+				"          MONTH_IN_QUARTER_NUMBER as string,",
+				"          MONTH_IN_YEAR_SHORT as string,",
+				"          MONTH_IN_YEAR_LONG as string,",
+				"          WEEK_WK_QTR_YEAR as string,",
+				"          WEEK_FROM_TO as string,",
+				"          WEEK_STARTING as string,",
+				"          WEEK_WK_YEAR_CONT as string,",
+				"          WEEK_WK_YEAR as string,",
+				"          WEEK_WK_QTR_YEAR_CONT as string,",
+				"          DAY_IN_WEEK_SHORT as string,",
+				"          DAY_IN_WEEK_NUMBER as string,",
+				"          DAY_IN_WEEK_LONG as string,",
+				"          MONTH_SHORT as string,",
+				"          MONTH_NUMBER as string,",
+				"          MONTH_LONG as string,",
+				"          QUARTER_SHORT_US as string,",
+				"          YEAR as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> date",
+				"order, OrderLines join(order@ORDER_ID == OrderLines@ORDER_ID,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1, customer join(order@CUSTOMER_ID == customer@CUSTOMER_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join2",
+				"join2, locationdim join(order@STORE_LOCATION_ID == locationdim@STORE_LOCATION_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join3",
+				"join3, productdim join(OrderLines@PRODUCT_ID == productdim@PRODUCT_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join4",
+				"join4, ProductTopping join(OrderLines@PRODUCT_TOPPING_ID == ProductTopping@Product_Topping_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join5",
+				"join5, promotions join(OrderLines@PROMOTION_ID == promotions@Promotion_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join6",
+				"join6, payment join(order@PAYMENT_ID == payment@Payment_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join7",
+				"join7, channel join(order@CHANNEL_ID == channel@Channel_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join8",
+				"join8, DeliveryType join(DELIVERY_ID == Delivery_Type_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join9",
+				"join9, date join(ORDER_DATE == DAY_US_MM_DD_YYYY,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join10",
+				"join10 select(mapColumn(",
+				"          ORDER_LINE_ID,",
+				"          ORDER_ID = order@ORDER_ID,",
+				"          CUSTOMER_DIM_KEY,",
+				"          PAYMENT_DIM_KEY = Payment_Ref_Key,",
+				"          CHANNEL_DIM_KEY = Channel_ref_key,",
+				"          DELIVERY_DIM_KEY = Delivery_Type_Ref_key,",
+				"          product_topping_dim = Product_Topping_Dim_Key,",
+				"          location_dim_key = Location_Dim_Key,",
+				"          product_dim_key,",
+				"          promotion_dim_key = PROMOTION_DIM_KEY,",
+				"          order_date = ORDER_DATE,",
+				"          order_status = ORDER_STATUS,",
+				"          quantity = TOTAL_QUANTITY,",
+				"          unit_price = UNIT_PRICE,",
+				"          topping_price = Topping_Price,",
+				"          promotion_amount = PROMOTION_AMOUNT,",
+				"          date_key = DATE_KEY",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(dm_create_date = currentDate()) ~> derivedColumn1",
+				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Order_Line_ID as integer,",
+				"          Order_ID as integer,",
+				"          CUSTOMER_DIM_KEY as integer,",
+				"          Payment_Ref_Key as integer,",
+				"          channel_ref_key as integer,",
+				"          Delivery_Type_Ref_key as integer,",
+				"          Topping_Dim_Key as integer,",
+				"          Location_Dim_Key as integer,",
+				"          product_dim_kEY as integer,",
+				"          PROMOTION_DIM_KEY as integer,",
+				"          Date_Key as integer,",
+				"          Order_Date as date,",
+				"          Order_Status as string,",
+				"          Quantity as decimal(5,2),",
+				"          Unit_price as decimal(5,2),",
+				"          Topping_Price as decimal(5,2),",
+				"          Promotion_Amount as decimal(5,3),",
+				"          DM_create_date as date",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Order_Line_ID = ORDER_LINE_ID,",
+				"          Order_ID = ORDER_ID,",
+				"          CUSTOMER_DIM_KEY,",
+				"          Payment_Ref_Key = PAYMENT_DIM_KEY,",
+				"          channel_ref_key = CHANNEL_DIM_KEY,",
+				"          Delivery_Type_Ref_key = DELIVERY_DIM_KEY,",
+				"          Topping_Dim_Key = product_topping_dim,",
+				"          Location_Dim_Key = location_dim_key,",
+				"          product_dim_kEY = product_dim_key,",
+				"          PROMOTION_DIM_KEY = promotion_dim_key,",
+				"          Date_Key = date_key,",
+				"          Order_Date = order_date,",
+				"          Order_Status = order_status,",
+				"          Quantity = quantity,",
+				"          Unit_price = unit_price,",
+				"          Topping_Price = topping_price,",
+				"          Promotion_Amount = promotion_amount,",
+				"          DM_create_date = dm_create_date",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

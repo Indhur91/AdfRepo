@@ -1,0 +1,42 @@
+{
+	"name": "ds_state_country",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "STG_STATE_COUNTRY",
+				"folderPath": "target/AzureProject/Stg",
+				"fileSystem": "data"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "STATE_COUNTRY_ID",
+				"type": "String"
+			},
+			{
+				"name": "STATE_NAME",
+				"type": "String"
+			},
+			{
+				"name": "STATE_ABBREVATION",
+				"type": "String"
+			},
+			{
+				"name": "STATE_COUNTRY",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
