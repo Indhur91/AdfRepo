@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "indhudatafactory91"
 		},
-		"AzureDataLakeStorage1_accountKey": {
-			"type": "secureString",
-			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
-		},
 		"AzureSqlDatabase1_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
@@ -34,6 +30,10 @@
 		"AzureSqlDatabase1_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "Indhu"
+		},
+		"ls_kv_dev_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://kv-mypwd-dev.vault.azure.net/"
 		},
 		"containerUri": {
 			"type": "string",
@@ -62,14 +62,11 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
-					"AzureDataLakeStorage1_accountKey": {
-						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
-					},
 					"AzureSqlDatabase1_password": {
 						"value": "[parameters('AzureSqlDatabase1_password')]"
 					},
-					"AzureDataLakeStorage1_properties_typeProperties_url": {
-						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
+					"Oracle_connectionString": {
+						"value": "[parameters('Oracle_connectionString')]"
 					},
 					"AzureSqlDatabase1_properties_typeProperties_server": {
 						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]"
@@ -79,6 +76,12 @@
 					},
 					"AzureSqlDatabase1_properties_typeProperties_userName": {
 						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]"
+					},
+					"ls_kv_dev_properties_typeProperties_baseUrl": {
+						"value": "[parameters('ls_kv_dev_properties_typeProperties_baseUrl')]"
+					},
+					"AzureDataLakeStorage1_properties_typeProperties_url": {
+						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
 					}
 				}
 			},
@@ -117,9 +120,6 @@
 				"parameters": {
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
-					},
-					"Oracle_connectionString": {
-						"value": "[parameters('Oracle_connectionString')]"
 					}
 				}
 			},

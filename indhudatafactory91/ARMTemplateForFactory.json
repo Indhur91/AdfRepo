@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "indhudatafactory91"
 		},
-		"AzureDataLakeStorage1_accountKey": {
-			"type": "secureString",
-			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
-		},
 		"AzureSqlDatabase1_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
@@ -34,6 +30,10 @@
 		"AzureSqlDatabase1_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "Indhu"
+		},
+		"ls_kv_dev_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://kv-mypwd-dev.vault.azure.net/"
 		}
 	},
 	"variables": {
@@ -6421,12 +6421,18 @@
 				"typeProperties": {
 					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
 					"accountKey": {
-						"type": "SecureString",
-						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_kv_dev",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "PWDblob"
 					}
 				}
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_kv_dev')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase1')]",
@@ -9880,6 +9886,19 @@
 				"[concat(variables('factoryId'), '/datasets/DelimitedText1')]",
 				"[concat(variables('factoryId'), '/datasets/tgt_emp')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_kv_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_kv_dev_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
 		}
 	]
 }
