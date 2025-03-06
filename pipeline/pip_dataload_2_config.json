@@ -17,7 +17,7 @@
 				"typeProperties": {
 					"source": {
 						"type": "OracleSource",
-						"oracleReaderQuery": "select * from hr.config where activeflag = 1",
+						"oracleReaderQuery": "select * from hr.config where activeflag = 2",
 						"partitionOption": "None",
 						"queryTimeout": "02:00:00"
 					},
