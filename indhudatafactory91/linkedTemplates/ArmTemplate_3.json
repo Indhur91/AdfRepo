@@ -1333,7 +1333,7 @@
 													"type": "Expression"
 												},
 												"filename": {
-													"value": "@concat(item().SOURCE_TABLE,'.csv')",
+													"value": " ",
 													"type": "Expression"
 												}
 											}
