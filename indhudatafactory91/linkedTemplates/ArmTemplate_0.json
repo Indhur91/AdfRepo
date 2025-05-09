@@ -11,10 +11,6 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
 		},
-		"Oracle_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'Oracle'"
-		},
 		"AzureSqlDatabase1_properties_typeProperties_server": {
 			"type": "string",
 			"defaultValue": "indhuserver1.database.windows.net"
@@ -271,8 +267,8 @@
 				"type": "AzureSqlTable",
 				"schema": [],
 				"typeProperties": {
-					"schema": "hr",
-					"table": "Employees"
+					"schema": "dbo",
+					"table": "learnit_batch9_employee_tgt"
 				}
 			},
 			"dependsOn": [
@@ -806,6 +802,60 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/ds_azure_control_table')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "SOURCE_SYSTEM",
+						"type": "varchar"
+					},
+					{
+						"name": "SOURCE_SCHEMA",
+						"type": "varchar"
+					},
+					{
+						"name": "SOURCE_TABLE",
+						"type": "varchar"
+					},
+					{
+						"name": "LOAD_TYPE",
+						"type": "varchar"
+					},
+					{
+						"name": "IS_ACT_IND",
+						"type": "varchar"
+					},
+					{
+						"name": "TARGET_SCHEMA",
+						"type": "varchar"
+					},
+					{
+						"name": "TARGET_TABLE",
+						"type": "varchar"
+					},
+					{
+						"name": "QUERY_DETAILS",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "metadata",
+					"table": "control_table_learnIT"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/location_dim')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -952,25 +1002,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/ls_kv_dev')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Oracle')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "Oracle",
-				"typeProperties": {
-					"connectionString": "[parameters('Oracle_connectionString')]"
-				},
-				"connectVia": {
-					"referenceName": "SelfHostedIR",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/integrationRuntimes/SelfHostedIR')]"
 			]
 		}
 	]

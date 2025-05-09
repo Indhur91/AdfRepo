@@ -65,9 +65,6 @@
 					"AzureSqlDatabase1_password": {
 						"value": "[parameters('AzureSqlDatabase1_password')]"
 					},
-					"Oracle_connectionString": {
-						"value": "[parameters('Oracle_connectionString')]"
-					},
 					"AzureSqlDatabase1_properties_typeProperties_server": {
 						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]"
 					},
@@ -100,6 +97,9 @@
 				"parameters": {
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
+					},
+					"Oracle_connectionString": {
+						"value": "[parameters('Oracle_connectionString')]"
 					}
 				}
 			},
