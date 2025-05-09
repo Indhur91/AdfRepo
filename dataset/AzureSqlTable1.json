@@ -9,8 +9,8 @@
 		"type": "AzureSqlTable",
 		"schema": [],
 		"typeProperties": {
-			"schema": "hr",
-			"table": "Employees"
+			"schema": "dbo",
+			"table": "learnit_batch9_employee_tgt"
 		}
 	},
 	"type": "Microsoft.DataFactory/factories/datasets"

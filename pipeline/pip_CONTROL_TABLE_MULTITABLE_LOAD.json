@@ -80,8 +80,47 @@
 										"type": "DelimitedTextReadSettings"
 									}
 								},
-								"enableStaging": false
-							}
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_adsl",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": {
+											"value": "@pipeline().parameters.p_container",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.p_directory",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@concat(item().SOURCE_TABLE,'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "AzureSqlTable1",
+									"type": "DatasetReference"
+								}
+							]
 						},
 						{
 							"name": "source to adls",
@@ -191,8 +230,56 @@
 										"fileExtension": ".txt"
 									}
 								},
-								"enableStaging": false
-							}
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_adsl",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": {
+											"value": "@pipeline().parameters.p_container",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.p_directory",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@concat(item().SOURCE_TABLE,'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_archival",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": {
+											"value": "@pipeline().parameters.p_container",
+											"type": "Expression"
+										},
+										"archival_directory": {
+											"value": "@pipeline().parameters.p_archive_directory",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@concat(item().SOURCE_TABLE,'_',utcNow(),'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
 						},
 						{
 							"name": "Delete_30days_file",
@@ -214,12 +301,33 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_adsl",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": {
+											"value": "@pipeline().parameters.p_container",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.p_archive_directory",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": " ",
+											"type": "Expression"
+										}
+									}
+								},
 								"enableLogging": true,
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
 									"recursive": true,
-									"modifiedDatetimeStart": "2025-05-07T00:00:00.000Z",
-									"modifiedDatetimeEnd": "2025-05-08T10:30:00.000Z",
+									"modifiedDatetimeStart": null,
+									"modifiedDatetimeEnd": {
+										"value": "@adddays(utcNow(),-30 )",
+										"type": "Expression"
+									},
 									"wildcardFileName": "*.csv.gz",
 									"enablePartitionDiscovery": false
 								}

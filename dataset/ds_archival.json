@@ -1,5 +1,5 @@
 {
-	"name": "ds_adsl",
+	"name": "ds_archival",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "AzureDataLakeStorage1",
@@ -9,7 +9,7 @@
 			"container": {
 				"type": "string"
 			},
-			"directory": {
+			"archival_directory": {
 				"type": "string"
 			},
 			"filename": {
@@ -20,10 +20,21 @@
 		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
-				"type": "AzureBlobFSLocation"
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().filename",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().archival_directory",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().container",
+					"type": "Expression"
+				}
 			},
 			"columnDelimiter": ",",
-			"compressionCodec": null,
 			"escapeChar": "\\",
 			"firstRowAsHeader": true,
 			"quoteChar": "\""
