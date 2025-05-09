@@ -17,7 +17,10 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": "SELECT * FROM metadata.control_table_learnIT WHERE IS_aCT_IND='Y' and source_system=@{pipeline().parameters.p_SOURCE_SYSTEM}",
+						"sqlReaderQuery": {
+							"value": "SELECT * FROM metadata.control_table_learnIT WHERE IS_aCT_IND='Y' and source_system=@{pipeline().parameters.p_SOURCE_SYSTEM}",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
@@ -77,13 +80,6 @@
 										"type": "DelimitedTextReadSettings"
 									}
 								},
-								"sink": {
-									"type": "AzureSqlSink",
-									"writeBehavior": "insert",
-									"sqlWriterUseTableLock": false,
-									"tableOption": "autoCreate",
-									"disableMetricsCollection": false
-								},
 								"enableStaging": false
 							}
 						},
@@ -101,12 +97,57 @@
 							"userProperties": [],
 							"typeProperties": {
 								"source": {
-									"type": "AzureSqlSource",
-									"queryTimeout": "02:00:00",
-									"partitionOption": "None"
+									"type": "OracleSource",
+									"partitionOption": "None",
+									"queryTimeout": "02:00:00"
 								},
-								"enableStaging": false
-							}
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SRC_OracleTable",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adsl",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": {
+											"value": "@pipeline().parameters.p_container",
+											"type": "Expression"
+										},
+										"directory": {
+											"value": "@pipeline().parameters.p_directory",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@concat(item().SOURCE_TABLE,'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
 						},
 						{
 							"name": "ADLS_STAGE_to_ ARCHIEVE",
