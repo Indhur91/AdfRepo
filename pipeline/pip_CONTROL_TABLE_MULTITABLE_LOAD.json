@@ -1,8 +1,212 @@
 {
 	"name": "pip_CONTROL_TABLE_MULTITABLE_LOAD",
 	"properties": {
+		"activities": [
+			{
+				"name": "FETCH METADATA CONTROL_TABLE",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_azure_control_table",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Traverse_control_values",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "FETCH METADATA CONTROL_TABLE",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('FETCH METADATA CONTROL_TABLE').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "ADLS_to_target",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "source to adls",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false,
+									"tableOption": "autoCreate",
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false
+							}
+						},
+						{
+							"name": "source to adls",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"enableStaging": false
+							}
+						},
+						{
+							"name": "ADLS_STAGE_to_ ARCHIEVE",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "ADLS_to_target",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false
+							}
+						},
+						{
+							"name": "Delete_30days_file",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "ADLS_STAGE_to_ ARCHIEVE",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"enableLogging": true,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"modifiedDatetimeStart": "2025-05-07T00:00:00.000Z",
+									"modifiedDatetimeEnd": "2025-05-08T10:30:00.000Z",
+									"wildcardFileName": "*.csv.gz",
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_source_system": {
+				"type": "string",
+				"defaultValue": "'SQL_SERVER'"
+			},
+			"p_container": {
+				"type": "string",
+				"defaultValue": "adftraining"
+			},
+			"p_directory": {
+				"type": "string",
+				"defaultValue": "STAGE"
+			},
+			"p_archive_directory": {
+				"type": "string",
+				"defaultValue": "archive"
+			}
+		},
 		"folder": {
-			"name": "subhender_sir"
+			"name": "ADF_TRAINING_NEW"
 		},
 		"annotations": []
 	}

@@ -1,0 +1,49 @@
+{
+	"name": "ds_azure_control_table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "SOURCE_SYSTEM",
+				"type": "varchar"
+			},
+			{
+				"name": "SOURCE_SCHEMA",
+				"type": "varchar"
+			},
+			{
+				"name": "SOURCE_TABLE",
+				"type": "varchar"
+			},
+			{
+				"name": "LOAD_TYPE",
+				"type": "varchar"
+			},
+			{
+				"name": "IS_ACT_IND",
+				"type": "varchar"
+			},
+			{
+				"name": "TARGET_SCHEMA",
+				"type": "varchar"
+			},
+			{
+				"name": "TARGET_TABLE",
+				"type": "varchar"
+			},
+			{
+				"name": "QUERY_DETAILS",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "metadata",
+			"table": "control_table_learnIT"
+		}
+	}
+}
