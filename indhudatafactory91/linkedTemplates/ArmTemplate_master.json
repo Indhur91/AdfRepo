@@ -15,6 +15,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'Oracle'"
 		},
+		"LS_onprem_SqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_onprem_SqlServer'"
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://indhustorage2.dfs.core.windows.net/"
@@ -100,6 +104,9 @@
 					},
 					"Oracle_connectionString": {
 						"value": "[parameters('Oracle_connectionString')]"
+					},
+					"LS_onprem_SqlServer_connectionString": {
+						"value": "[parameters('LS_onprem_SqlServer_connectionString')]"
 					}
 				}
 			},

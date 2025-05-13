@@ -11,6 +11,9 @@
 		"Oracle_connectionString": {
 			"value": ""
 		},
+		"LS_onprem_SqlServer_connectionString": {
+			"value": ""
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"value": "https://indhustorage2.dfs.core.windows.net/"
 		},
