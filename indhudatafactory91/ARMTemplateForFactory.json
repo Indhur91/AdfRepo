@@ -634,19 +634,85 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"variableName": "value",
+							"variableName": "json_value",
 							"value": {
 								"value": "@activity('read_parameter_json_file').output.firstRow.p_DEPT_ID",
 								"type": "Expression"
 							}
 						}
+					},
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "select * from dbo.json_src where p_DEPT_ID=@{variables('json_value')}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "SqlServerSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "json_src"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "tgt_param_json"
+								}
+							}
+						]
 					}
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
 				"variables": {
-					"value": {
+					"json_value": {
 						"type": "String"
 					}
 				},
@@ -656,7 +722,8 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/DS_JSON_ADLS')]"
+				"[concat(variables('factoryId'), '/datasets/DS_JSON_ADLS')]",
+				"[concat(variables('factoryId'), '/datasets/DS_onprem_sql')]"
 			]
 		},
 		{
@@ -4034,7 +4101,7 @@
 						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [
 							{
-								"activity": "Set variable1",
+								"activity": "Set variable_first_row",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -4096,7 +4163,7 @@
 						]
 					},
 					{
-						"name": "Set variable1",
+						"name": "Set variable_first_row",
 						"type": "SetVariable",
 						"state": "Inactive",
 						"onInactiveMarkAs": "Succeeded",
@@ -4255,6 +4322,128 @@
 					"v_dept_id": {
 						"type": "String"
 					}
+				},
+				"folder": {
+					"name": "ADF_TRAINING_NEW"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_adls_dynamic')]",
+				"[concat(variables('factoryId'), '/datasets/DS_onprem_sql')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/reading_parameter_file')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "read_parameter_file_csv_first_row",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "ds_adls_dynamic",
+								"type": "DatasetReference",
+								"parameters": {
+									"container": "learn-it-project",
+									"directory": "parameter",
+									"filename": "param.csv"
+								}
+							},
+							"firstRowOnly": true
+						}
+					},
+					{
+						"name": "Copy_sql_to_azureSQL_parameter",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "read_parameter_file_csv_first_row",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "select * from dbo.learnit_batch9_employee where dept_id=@{activity('read_parameter_file_csv_first_row').output.firstRow.department_id}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "SqlServerSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "learnit_batch9_employee"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "learnit_batch9_emp_param"
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
 				},
 				"folder": {
 					"name": "ADF_TRAINING_NEW"
