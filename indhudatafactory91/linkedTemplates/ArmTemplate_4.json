@@ -13,6 +13,587 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/pip_CONTROL_TABLE_MULTITABLE_LOAD')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "FETCH METADATA CONTROL_TABLE",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT * FROM metadata.control_table_learnIT WHERE IS_aCT_IND='Y' and source_system=@{pipeline().parameters.p_SOURCE_SYSTEM}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_azure_control_table",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Traverse_control_values",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "FETCH METADATA CONTROL_TABLE",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('FETCH METADATA CONTROL_TABLE').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "ADLS_to_target",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "source to adls",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "AzureSqlSink",
+											"writeBehavior": "insert",
+											"sqlWriterUseTableLock": false
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_adsl",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": {
+													"value": "@pipeline().parameters.p_container",
+													"type": "Expression"
+												},
+												"directory": {
+													"value": "@pipeline().parameters.p_directory",
+													"type": "Expression"
+												},
+												"filename": {
+													"value": " ",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "AzureSqlTable1",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								},
+								{
+									"name": "source to adls",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "OracleSource",
+											"partitionOption": "None",
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "SRC_OracleTable",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_adsl",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": {
+													"value": "@pipeline().parameters.p_container",
+													"type": "Expression"
+												},
+												"directory": {
+													"value": "@pipeline().parameters.p_directory",
+													"type": "Expression"
+												},
+												"filename": {
+													"value": "@concat(item().SOURCE_TABLE,'.csv')",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "ADLS_STAGE_to_ ARCHIEVE",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "ADLS_to_target",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_adsl",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": {
+													"value": "@pipeline().parameters.p_container",
+													"type": "Expression"
+												},
+												"directory": {
+													"value": "@pipeline().parameters.p_directory",
+													"type": "Expression"
+												},
+												"filename": {
+													"value": "@concat(item().SOURCE_TABLE,'.csv')",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_archival",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": {
+													"value": "@pipeline().parameters.p_container",
+													"type": "Expression"
+												},
+												"archival_directory": {
+													"value": "@pipeline().parameters.p_archive_directory",
+													"type": "Expression"
+												},
+												"filename": {
+													"value": "@concat(item().SOURCE_TABLE,'_',utcNow(),'.csv')",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "Delete_30days_file",
+									"type": "Delete",
+									"dependsOn": [
+										{
+											"activity": "ADLS_STAGE_to_ ARCHIEVE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_adsl",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": {
+													"value": "@pipeline().parameters.p_container",
+													"type": "Expression"
+												},
+												"directory": {
+													"value": "@pipeline().parameters.p_archive_directory",
+													"type": "Expression"
+												},
+												"filename": {
+													"value": " ",
+													"type": "Expression"
+												}
+											}
+										},
+										"logStorageSettings": {
+											"linkedServiceName": {
+												"referenceName": "AzureDataLakeStorage1",
+												"type": "LinkedServiceReference"
+											},
+											"path": "data/parameter_output"
+										},
+										"enableLogging": true,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"modifiedDatetimeStart": null,
+											"modifiedDatetimeEnd": {
+												"value": "@adddays(utcNow(),-30 )",
+												"type": "Expression"
+											},
+											"wildcardFileName": "*.csv.gz",
+											"enablePartitionDiscovery": false
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"p_source_system": {
+						"type": "string",
+						"defaultValue": "'SQL_SERVER'"
+					},
+					"p_container": {
+						"type": "string",
+						"defaultValue": "adftraining"
+					},
+					"p_directory": {
+						"type": "string",
+						"defaultValue": "STAGE"
+					},
+					"p_archive_directory": {
+						"type": "string",
+						"defaultValue": "archive"
+					}
+				},
+				"folder": {
+					"name": "ADF_TRAINING_NEW"
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pip_GetMetadata_activity')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "If Condition1",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Get Metadata1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@greater(activity('Get Metadata1').output.size,10)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Set variable1",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"policy": {
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "Message",
+										"value": "'Load run is skipped'"
+									}
+								}
+							],
+							"ifTrueActivities": [
+								{
+									"name": "Copy activity",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "src_data",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "target_switch",
+											"type": "DatasetReference",
+											"parameters": {
+												"switch1": "default"
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "Get Metadata1",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "src_data",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"size"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"Runload": {
+						"type": "int",
+						"defaultValue": 1
+					}
+				},
+				"variables": {
+					"Message": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-26T01:51:01Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pip_LOCATION_DIM_SCD')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "df_LOCATIONS_DIM_SCD2",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"srclocationdim": {},
+									"sink1": {},
+									"sink2": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-12-14T05:25:05Z"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/pip_dataload')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -1579,6 +2160,125 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/read_paramaeter_file')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "read_parameter_file_csv",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "ds_adls_dynamic",
+								"type": "DatasetReference",
+								"parameters": {
+									"container": "learn-it-project",
+									"directory": "parameter",
+									"filename": "param.csv"
+								}
+							},
+							"firstRowOnly": true
+						}
+					},
+					{
+						"name": "Copy_sql_to_azureSQL_parameter",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "read_parameter_file_csv",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "select * from dbo.learnit_batch9_employee where dept_id=@{activity('read_parameter_file_csv').output.firstRow.department_id}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "SqlServerSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "learnit_batch9_employee"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "learnit_batch9_emp_param"
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "ADF_TRAINING_NEW"
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -2163,495 +2863,6 @@
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
 						"     partitionBy('hash', 1)) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/df_CHANNEL_REF_scd1')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"folder": {
-					"name": "PROJECT_DATAFLOW"
-				},
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_channel",
-								"type": "DatasetReference"
-							},
-							"name": "source1"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "AzureSqlTablechannelref",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "alterRow1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          CHANNEL_ID as short,",
-						"          CHANNEL_TYPE as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 derive(O_current_date = currentDate()) ~> derivedColumn1",
-						"derivedColumn1 alterRow(upsertIf(1==1)) ~> alterRow1",
-						"alterRow1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          Channel_ref_key as integer,",
-						"          Channel_ID as integer,",
-						"          Channel_Type as string,",
-						"          STG_CREATE_DATE as date",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:false,",
-						"     updateable:false,",
-						"     upsertable:true,",
-						"     keys:['Channel_ID'],",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     mapColumn(",
-						"          Channel_ID = CHANNEL_ID,",
-						"          Channel_Type = CHANNEL_TYPE,",
-						"          STG_CREATE_DATE = O_current_date",
-						"     )) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/df_CUSTOMER_STG')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"folder": {
-					"name": "PROJECT_DATAFLOW"
-				},
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "customer",
-								"type": "DatasetReference"
-							},
-							"name": "STGCUSTOMERS"
-						},
-						{
-							"dataset": {
-								"referenceName": "cust_address",
-								"type": "DatasetReference"
-							},
-							"name": "CUSTOMERADDRESS"
-						},
-						{
-							"dataset": {
-								"referenceName": "customer_email",
-								"type": "DatasetReference"
-							},
-							"name": "CUSTEMAIL"
-						},
-						{
-							"dataset": {
-								"referenceName": "customer_phno",
-								"type": "DatasetReference"
-							},
-							"name": "CUSTPHONE"
-						},
-						{
-							"dataset": {
-								"referenceName": "cust_hutlover",
-								"type": "DatasetReference"
-							},
-							"name": "HUTLOVER"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "customer_dim",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "join1"
-						},
-						{
-							"name": "window1"
-						},
-						{
-							"name": "filter1"
-						},
-						{
-							"name": "window2"
-						},
-						{
-							"name": "filter2"
-						},
-						{
-							"name": "window3"
-						},
-						{
-							"name": "filter3"
-						},
-						{
-							"name": "join2"
-						},
-						{
-							"name": "join3"
-						},
-						{
-							"name": "join4"
-						},
-						{
-							"name": "select1"
-						},
-						{
-							"name": "filter4"
-						},
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "derivedColumn2"
-						},
-						{
-							"name": "surrogateKey1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          CUSTOMER_ID as short,",
-						"          CUSTOMER_FIRST_NAME as string,",
-						"          CUSTOMER_LAST_NAME as string,",
-						"          CUSTOMER_DOB as string,",
-						"          CUSTOMER_TYPE as string,",
-						"          IS_LOYAL as boolean,",
-						"          FIRST_PURCHASE_DATE as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> STGCUSTOMERS",
-						"source(output(",
-						"          Customer_Address_ID as short,",
-						"          Address_Lane1 as string,",
-						"          Address_Lane_2 as string,",
-						"          City_Name as string,",
-						"          State_Name as string,",
-						"          Country_Name as string,",
-						"          Zip_Code as integer,",
-						"          Gate_Code as short,",
-						"          Address_Type as string,",
-						"          Address_Status as string,",
-						"          Customer_ID as short",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> CUSTOMERADDRESS",
-						"source(output(",
-						"          CUSTOMER_EMAIL_ID as string,",
-						"          CUSTOMER_EMAIL as string,",
-						"          CUSTOMER_EMAIL_TYPE as string,",
-						"          CUSTOMER_EMAIL_STATUS as string,",
-						"          CUSTOMER_ID as short",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> CUSTEMAIL",
-						"source(output(",
-						"          CUSTOMER_PHONE_NUMBER_ID as string,",
-						"          CUSTOMER_PHONE_NUMBER as string,",
-						"          CUSTOMER_PHONE_TYPE as string,",
-						"          CUSTOMER_PHONE_STATUS as string,",
-						"          CUSTOMER_ID as short",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> CUSTPHONE",
-						"source(output(",
-						"          HUT_LOVERS_ID as string,",
-						"          JOINING_DATE as string,",
-						"          IS_ACTIVE as string,",
-						"          MEMBER_ID as string,",
-						"          CUSTMOER_ID as short",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> HUTLOVER",
-						"STGCUSTOMERS, derivedColumn1 join(STGCUSTOMERS@CUSTOMER_ID == CUSTOMERADDRESS@Customer_ID,",
-						"     joinType:'left',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join1",
-						"CUSTPHONE window(over(CUSTOMER_ID),",
-						"     desc(CUSTOMER_PHONE_TYPE, true),",
-						"     SECONDARY_PHONE_NUMBER = lead(CUSTOMER_PHONE_NUMBER),",
-						"          RN_PH = rowNumber()) ~> window1",
-						"window1 filter(RN_PH==1) ~> filter1",
-						"CUSTEMAIL window(over(CUSTOMER_ID),",
-						"     asc(CUSTOMER_EMAIL_TYPE, true),",
-						"     SECONDARY_EMAIL = lead(CUSTOMER_EMAIL),",
-						"          RN_EMAIL = rowNumber()) ~> window2",
-						"window2 filter(RN_EMAIL==1) ~> filter2",
-						"filter4 window(over(Customer_ID),",
-						"     desc(Address_Type, true),",
-						"     O_ADDRESS_LANE1 = lead(Address_Lane1),",
-						"          O_ADDRESS_LANE2 = lead(Address_Lane_2),",
-						"          O_CITY_NAME = lead(City_Name),",
-						"          O_STATE_NAME = lead(State_Name),",
-						"          O_COUNTRY_NAME = lead(Country_Name),",
-						"          O_ZIP_CODE = lead(Zip_Code),",
-						"          O_GATE_CODE = lead(Gate_Code),",
-						"          RN_ADDRESS = rowNumber(),",
-						"     partitionBy('hash', 1)) ~> window3",
-						"window3 filter(RN_ADDRESS==1) ~> filter3",
-						"join1, filter1 join(STGCUSTOMERS@CUSTOMER_ID == CUSTPHONE@CUSTOMER_ID,",
-						"     joinType:'left',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join2",
-						"join2, filter2 join(STGCUSTOMERS@CUSTOMER_ID == CUSTEMAIL@CUSTOMER_ID,",
-						"     joinType:'left',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join3",
-						"join3, HUTLOVER join(STGCUSTOMERS@CUSTOMER_ID == CUSTMOER_ID,",
-						"     joinType:'left',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join4",
-						"join4 select(mapColumn(",
-						"          CUSTOMER_ID = STGCUSTOMERS@CUSTOMER_ID,",
-						"          CUSTOMER_FIRST_NAME,",
-						"          CUSTOMER_LAST_NAME,",
-						"          IS_LOYAL,",
-						"          PRIMARY_EMAIL = CUSTOMER_EMAIL,",
-						"          SECONDARY_EMAIL,",
-						"          PRIMARY_PHONE_NUMBER = CUSTOMER_PHONE_NUMBER,",
-						"          SECONDARY_PHONE_NUMBER,",
-						"          R_Address_Lane1 = Address_Lane1,",
-						"          R_Address_Lane_2 = Address_Lane_2,",
-						"          R_City_Name = City_Name,",
-						"          R_State_Name = State_Name,",
-						"          R_Country_Name = Country_Name,",
-						"          R_Zip_Code = Zip_Code,",
-						"          R_Gate_Code = Gate_Code,",
-						"          O_ADDRESS_LANE1,",
-						"          O_ADDRESS_LANE2,",
-						"          O_CITY_NAME,",
-						"          O_STATE_NAME,",
-						"          O_COUNTRY_NAME,",
-						"          O_ZIP_CODE,",
-						"          O_GATE_CODE,",
-						"          JOINING_DATE",
-						"     ),",
-						"     partitionBy('hash', 1),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select1",
-						"CUSTOMERADDRESS filter(Address_Status=='Active') ~> filter4",
-						"filter3 derive(O_ADDRESS_LANE1 = case(Address_Type=='Office', Address_Lane1,O_ADDRESS_LANE1),",
-						"          O_ADDRESS_LANE2 = case(Address_Type=='Office', Address_Lane_2,O_ADDRESS_LANE2),",
-						"          O_CITY_NAME = case(Address_Type=='Office', City_Name,O_CITY_NAME),",
-						"          O_STATE_NAME = case(Address_Type=='Office', State_Name,O_STATE_NAME),",
-						"          O_COUNTRY_NAME = case(Address_Type=='Office', Country_Name,O_COUNTRY_NAME),",
-						"          O_ZIP_CODE = case(Address_Type=='Office', Zip_Code,O_ZIP_CODE),",
-						"          O_GATE_CODE = case(Address_Type=='Office', Gate_Code,O_GATE_CODE),",
-						"          Address_Lane1 = case(Address_Type == 'Office','NULL',Address_Lane1),",
-						"          Address_Lane_2 = case(Address_Type == 'Office','NULL',Address_Lane_2),",
-						"          City_Name = case(Address_Type == 'Office','NULL',City_Name),",
-						"          State_Name = case(Address_Type == 'Office','NULL',State_Name),",
-						"          Country_Name = case(Address_Type == 'Office','NULL',Country_Name),",
-						"          Zip_Code = case(Address_Type == 'Office',0,Zip_Code),",
-						"          Gate_Code = case(Address_Type == 'Office',0)) ~> derivedColumn1",
-						"surrogateKey1 derive(STG_CREATE_DATE = currentDate()) ~> derivedColumn2",
-						"select1 keyGenerate(output(CUSTOMER_DIM_KEY as long),",
-						"     startAt: 1L,",
-						"     stepValue: 1L) ~> surrogateKey1",
-						"derivedColumn2 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     recreate:true,",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     partitionBy('hash', 1),",
-						"     preCommands: [],",
-						"     postCommands: []) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/df_DELIVERY_TYPE_REF_scd1')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"folder": {
-					"name": "PROJECT_DATAFLOW"
-				},
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_DELIVERY_TYPE",
-								"type": "DatasetReference"
-							},
-							"name": "source1"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "AzureSqlTableDELIVERY_TYPE_REF",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "alterRow1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          DELIVERY_ID as short,",
-						"          DELIVERY_TYPE as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 derive(o_current_date = currentDate()) ~> derivedColumn1",
-						"derivedColumn1 alterRow(upsertIf(1==1)) ~> alterRow1",
-						"alterRow1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          Delivery_Type_Ref_key as integer,",
-						"          Delivery_Type_ID as integer,",
-						"          Delivery_Type as string,",
-						"          STG_CREATE_DATE as date",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:false,",
-						"     updateable:false,",
-						"     upsertable:true,",
-						"     keys:['Delivery_Type_ID'],",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     mapColumn(",
-						"          Delivery_Type_ID = DELIVERY_ID,",
-						"          Delivery_Type = DELIVERY_TYPE,",
-						"          STG_CREATE_DATE = o_current_date",
-						"     )) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/df_PAYMENT_REF_scd1')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"folder": {
-					"name": "PROJECT_DATAFLOW"
-				},
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_payment_ref",
-								"type": "DatasetReference"
-							},
-							"name": "source1"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "AzureSqlTablePAYMENT_REF",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "alterRow1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          PAYMENT_ID as short,",
-						"          PAYMENT_TYPE as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 derive(o_current_date = currentDate()) ~> derivedColumn1",
-						"derivedColumn1 alterRow(upsertIf(1==1)) ~> alterRow1",
-						"alterRow1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          Payment_Ref_Key as integer,",
-						"          Payment_ID as integer,",
-						"          Payment_Type as string,",
-						"          STG_CREATE_DATE as date",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:false,",
-						"     updateable:false,",
-						"     upsertable:true,",
-						"     keys:['Payment_ID'],",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     mapColumn(",
-						"          Payment_ID = PAYMENT_ID,",
-						"          Payment_Type = PAYMENT_TYPE,",
-						"          STG_CREATE_DATE = o_current_date",
-						"     )) ~> sink1"
 					]
 				}
 			},

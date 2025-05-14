@@ -8,10 +8,13 @@
 		"AzureSqlDatabase1_password": {
 			"value": ""
 		},
-		"Oracle_connectionString": {
+		"LS_azure_adls_accountKey": {
 			"value": ""
 		},
 		"LS_onprem_SqlServer_connectionString": {
+			"value": ""
+		},
+		"Oracle_connectionString": {
 			"value": ""
 		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
@@ -25,6 +28,9 @@
 		},
 		"AzureSqlDatabase1_properties_typeProperties_userName": {
 			"value": "Indhu"
+		},
+		"LS_azure_adls_properties_typeProperties_url": {
+			"value": "https://indhustorage2.dfs.core.windows.net/"
 		},
 		"ls_kv_dev_properties_typeProperties_baseUrl": {
 			"value": "https://kv-mypwd-dev.vault.azure.net/"

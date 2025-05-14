@@ -11,13 +11,17 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
 		},
-		"Oracle_connectionString": {
+		"LS_azure_adls_accountKey": {
 			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'Oracle'"
+			"metadata": "Secure string for 'accountKey' of 'LS_azure_adls'"
 		},
 		"LS_onprem_SqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_onprem_SqlServer'"
+		},
+		"Oracle_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Oracle'"
 		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
@@ -34,6 +38,10 @@
 		"AzureSqlDatabase1_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "Indhu"
+		},
+		"LS_azure_adls_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://indhustorage2.dfs.core.windows.net/"
 		},
 		"ls_kv_dev_properties_typeProperties_baseUrl": {
 			"type": "string",
@@ -69,6 +77,9 @@
 					"AzureSqlDatabase1_password": {
 						"value": "[parameters('AzureSqlDatabase1_password')]"
 					},
+					"LS_azure_adls_accountKey": {
+						"value": "[parameters('LS_azure_adls_accountKey')]"
+					},
 					"AzureSqlDatabase1_properties_typeProperties_server": {
 						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]"
 					},
@@ -78,11 +89,11 @@
 					"AzureSqlDatabase1_properties_typeProperties_userName": {
 						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]"
 					},
+					"LS_azure_adls_properties_typeProperties_url": {
+						"value": "[parameters('LS_azure_adls_properties_typeProperties_url')]"
+					},
 					"ls_kv_dev_properties_typeProperties_baseUrl": {
 						"value": "[parameters('ls_kv_dev_properties_typeProperties_baseUrl')]"
-					},
-					"AzureDataLakeStorage1_properties_typeProperties_url": {
-						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
 					}
 				}
 			},
@@ -102,11 +113,14 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"LS_onprem_SqlServer_connectionString": {
+						"value": "[parameters('LS_onprem_SqlServer_connectionString')]"
+					},
 					"Oracle_connectionString": {
 						"value": "[parameters('Oracle_connectionString')]"
 					},
-					"LS_onprem_SqlServer_connectionString": {
-						"value": "[parameters('LS_onprem_SqlServer_connectionString')]"
+					"AzureDataLakeStorage1_properties_typeProperties_url": {
+						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
 					}
 				}
 			},
