@@ -47,7 +47,7 @@
 				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
-						"activity": "Set variable1",
+						"activity": "Set variable_first_row",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -109,7 +109,7 @@
 				]
 			},
 			{
-				"name": "Set variable1",
+				"name": "Set variable_first_row",
 				"type": "SetVariable",
 				"state": "Inactive",
 				"onInactiveMarkAs": "Succeeded",

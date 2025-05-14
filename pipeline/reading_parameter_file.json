@@ -61,7 +61,7 @@
 					"source": {
 						"type": "SqlServerSource",
 						"sqlReaderQuery": {
-							"value": "select * from dbo.learnit_batch9_employee where dept_id=@{variables('v_dept_id')}",
+							"value": "select * from dbo.learnit_batch9_employee where dept_id=@{activity('read_parameter_file_csv_first_row').output.firstRow.department_id}",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
