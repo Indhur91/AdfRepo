@@ -1,0 +1,34 @@
+{
+	"name": "DS_onprem_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_onprem_SqlServer",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"schema_name": {
+				"type": "string"
+			},
+			"table_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "dept_id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "dept_name",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "learnit_batch9_department"
+		}
+	}
+}
