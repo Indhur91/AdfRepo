@@ -30,15 +30,16 @@
 						"referenceName": "ds_adls_dynamic",
 						"type": "DatasetReference",
 						"parameters": {
-							"container": "indhustorage2",
+							"container": "learn-it-project",
 							"directory": "parameter",
 							"filename": "param.csv"
 						}
-					}
+					},
+					"firstRowOnly": true
 				}
 			},
 			{
-				"name": "Copy data1",
+				"name": "Copy_sql_to_azureSQL_parameter",
 				"type": "Copy",
 				"dependsOn": [
 					{
