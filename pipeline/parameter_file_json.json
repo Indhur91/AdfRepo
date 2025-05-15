@@ -85,7 +85,7 @@
 					"source": {
 						"type": "SqlServerSource",
 						"sqlReaderQuery": {
-							"value": "select * from dbo.json_src where p_DEPT_ID=@{variables('json_value')}",
+							"value": "select * from dbo.json_src where p_DEPT_ID=\n'@{variables('json_value')}'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -132,6 +132,9 @@
 		"variables": {
 			"json_value": {
 				"type": "String"
+			},
+			"p_insurance_type_list": {
+				"type": "Array"
 			}
 		},
 		"folder": {
