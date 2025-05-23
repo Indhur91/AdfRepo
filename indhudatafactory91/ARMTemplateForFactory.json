@@ -733,7 +733,7 @@
 													"type": "Expression"
 												},
 												"filename": {
-													"value": "@pipeline().parameters.p_Folder_Names",
+													"value": "@item.Name",
 													"type": "Expression"
 												}
 											}
