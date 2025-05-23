@@ -34,7 +34,8 @@
 							"directory": "Reference_Files",
 							"filename": "list_of_folders.csv"
 						}
-					}
+					},
+					"firstRowOnly": false
 				}
 			},
 			{
@@ -124,7 +125,7 @@
 										"type": "Expression"
 									},
 									"p_Folder_Names": {
-										"value": "@item().Folder_Names",
+										"value": "@item().Folder_Name",
 										"type": "Expression"
 									}
 								}
