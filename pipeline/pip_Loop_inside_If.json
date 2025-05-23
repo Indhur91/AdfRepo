@@ -52,7 +52,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('Get_all_files_inside_folder').output.value.Folder_Name",
+						"value": "@activity('Get_all_files_inside_folder').output.value",
 						"type": "Expression"
 					},
 					"isSequential": false,
