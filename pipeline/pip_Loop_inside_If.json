@@ -1,0 +1,103 @@
+{
+	"name": "pip_Loop_inside_If",
+	"properties": {
+		"activities": [
+			{
+				"name": "read_folders_from_files",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_adls_dynamic",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": "learn-it-project",
+							"directory": "Reference_Files",
+							"filename": "list_of_folders.csv"
+						}
+					}
+				}
+			},
+			{
+				"name": "traverse_folder_names",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "read_folders_from_files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"activities": [
+						{
+							"name": "Get_all_files_inside_folder",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_adls_dynamic",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": "learn_it_project",
+										"directory": {
+											"value": "@item().Folder_Name",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": " ",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "ADF_TRAINING_NEW"
+		},
+		"annotations": []
+	}
+}
