@@ -84,10 +84,44 @@
 								],
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
 									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Execute Pipeline1",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Get_all_files_inside_folder",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "p_copy_files_to_DB",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_Files_Names": {
+										"value": "@activity('Get_all_files_inside_folder').output.childItems",
+										"type": "Expression"
+									},
+									"p_Folder_Names": {
+										"value": "@item().Folder_Names",
+										"type": "Expression"
+									}
 								}
 							}
 						}
