@@ -13,6 +13,229 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/df_product_stg')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "PROJECT_DATAFLOW"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_product",
+								"type": "DatasetReference"
+							},
+							"name": "stgproduct"
+						},
+						{
+							"dataset": {
+								"referenceName": "product_category",
+								"type": "DatasetReference"
+							},
+							"name": "category"
+						},
+						{
+							"dataset": {
+								"referenceName": "prod_sub_catg",
+								"type": "DatasetReference"
+							},
+							"name": "subcat"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "product_dim",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "join1"
+						},
+						{
+							"name": "join2"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "surrogateKey1"
+						},
+						{
+							"name": "derivedColumn1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          PRODUCT_ID as string,",
+						"          PRODUCT_NAME as string,",
+						"          PRODUCT_PRICE as string,",
+						"          PRODUCT_DESCRIPTION as string,",
+						"          CALORIES as string,",
+						"          IS_ACTIVE as string,",
+						"          PRODUCT_SUBCATEGORY_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> stgproduct",
+						"source(output(",
+						"          PRODUCT_CATEGORY_ID as string,",
+						"          PRODUCT_CATEGORY_NAME as string,",
+						"          PRODUCT_CATEGORY_DESCRIPTION as string,",
+						"          IS_ACTIVE as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> category",
+						"source(output(",
+						"          PRODUCT_SUBCATEGORY_ID as string,",
+						"          PRODUCT_SUBCATEGORY_NAME as string,",
+						"          PRODUCT_SIZE as string,",
+						"          PRODUCT_CATEGORY_ID as string,",
+						"          IS_ACTIVE as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> subcat",
+						"stgproduct, subcat join(stgproduct@PRODUCT_SUBCATEGORY_ID == subcat@PRODUCT_SUBCATEGORY_ID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join1",
+						"join1, category join(subcat@PRODUCT_CATEGORY_ID == category@PRODUCT_CATEGORY_ID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join2",
+						"join2 select(mapColumn(",
+						"          PRODUCT_ID,",
+						"          PRODUCT_NAME,",
+						"          PRODUCT_PRICE,",
+						"          PRODUCT_DESCRIPTION,",
+						"          IS_ACTIVE = stgproduct@IS_ACTIVE,",
+						"          PRODUCT_SUBCATEGORY_ID = stgproduct@PRODUCT_SUBCATEGORY_ID,",
+						"          PRODUCT_SUBCATEGORY_NAME,",
+						"          PRODUCT_SIZE,",
+						"          PRODUCT_CATEGORY_ID = category@PRODUCT_CATEGORY_ID,",
+						"          PRODUCT_CATEGORY_NAME",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 keyGenerate(output(product_dim_key as long),",
+						"     startAt: 1L,",
+						"     stepValue: 1L) ~> surrogateKey1",
+						"surrogateKey1 derive(stg_create_date = currentDate(),",
+						"          PRODUCT_PRICE = replace(PRODUCT_PRICE, '$', '')) ~> derivedColumn1",
+						"derivedColumn1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     recreate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/df_window_functions')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DelimitedText1",
+								"type": "DatasetReference"
+							},
+							"name": "source1",
+							"description": "select employee_id,department_id,salary,\nlead(salary) over ( order by salary ),\nlag(salary) over ( order by salary ) \nFROM employees"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "tgt_emp",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "window1",
+							"description": "Aggregates data based on a window and joins with original data.\nselect employee_id,department_id,salary,\nlead(salary) over ( order by salary ),\nlag(salary) over ( order by salary ) \nFROM employees\n"
+						},
+						{
+							"name": "select1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          EMPLOYEE_ID as string,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string,",
+						"          HIRE_DATE as string,",
+						"          JOB_ID as string,",
+						"          SALARY as string,",
+						"          COMMISSION_PCT as string,",
+						"          MANAGER_ID as string,",
+						"          DEPARTMENT_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source1 window(asc(SALARY, true),",
+						"     Next_Salary = lead(SALARY),",
+						"          Last_Salary = lag(SALARY)) ~> window1",
+						"window1 select(mapColumn(",
+						"          EMPLOYEE_ID,",
+						"          FIRST_NAME,",
+						"          LAST_NAME,",
+						"          SALARY,",
+						"          DEPARTMENT_ID,",
+						"          Next_Salary,",
+						"          Last_Salary",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          EMPLOYEE_ID as string,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string",
+						"     ),",
+						"     partitionFileNames:['window_function.csv'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/execute_multiple_pipeline')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -1005,7 +1228,9 @@
 				"annotations": [],
 				"lastPublishTime": "2024-12-05T01:29:44Z"
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/df_product_stg')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/pip_project_customer_dim')]",
@@ -1102,81 +1327,6 @@
 				},
 				"annotations": [],
 				"lastPublishTime": "2024-12-03T02:44:28Z"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pip_window_functions')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow_wiondowfunction",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "df_window_functions",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"source1": {},
-									"sink1": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": [],
-				"lastPublishTime": "2024-11-15T02:34:52Z"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/TUMBLING_trigger')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Stopped",
-				"pipeline": {
-					"pipelineReference": {
-						"referenceName": "copy_src_tgt_wait_activity",
-						"type": "PipelineReference"
-					},
-					"parameters": {}
-				},
-				"type": "TumblingWindowTrigger",
-				"typeProperties": {
-					"frequency": "Minute",
-					"interval": 5,
-					"startTime": "2024-10-04T02:44:00Z",
-					"endTime": "2024-10-05T02:42:00Z",
-					"delay": "00:00:00",
-					"maxConcurrency": 2,
-					"retryPolicy": {
-						"intervalInSeconds": 30
-					},
-					"dependsOn": []
-				}
 			},
 			"dependsOn": []
 		}

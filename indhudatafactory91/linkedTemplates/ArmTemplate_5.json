@@ -13,6 +13,208 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/reading_parameter_file')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "read_parameter_file_csv_first_row",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "ds_adls_dynamic",
+								"type": "DatasetReference",
+								"parameters": {
+									"container": "learn-it-project",
+									"directory": "parameter",
+									"filename": "param.csv"
+								}
+							},
+							"firstRowOnly": true
+						}
+					},
+					{
+						"name": "Copy_sql_to_azureSQL_parameter",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "read_parameter_file_csv_first_row",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "select * from dbo.learnit_batch9_employee where dept_id=@{activity('read_parameter_file_csv_first_row').output.firstRow.department_id}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "SqlServerSink",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "learnit_batch9_employee"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_onprem_sql",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"table_name": "learnit_batch9_emp_param"
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "ADF_TRAINING_NEW"
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DelimitedText1",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "tgt_data",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "select1"
+						},
+						{
+							"name": "filter1"
+						},
+						{
+							"name": "cast1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          EMPLOYEE_ID as string,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string,",
+						"          HIRE_DATE as string,",
+						"          JOB_ID as string,",
+						"          SALARY as string,",
+						"          COMMISSION_PCT as string,",
+						"          MANAGER_ID as string,",
+						"          DEPARTMENT_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"cast1 select(mapColumn(",
+						"          EMPLOYEE_ID,",
+						"          FIRST_NAME,",
+						"          LAST_NAME,",
+						"          HIRE_DATE,",
+						"          SALARY,",
+						"          MANAGER_ID,",
+						"          DEPARTMENT_ID",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 filter(EMPLOYEE_ID==100) ~> filter1",
+						"source1 cast(output(",
+						"          EMPLOYEE_ID as integer '000'",
+						"     ),",
+						"     errors: true) ~> cast1",
+						"filter1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['dataflow_1.csv'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/dataflow_EMP')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -2563,229 +2765,6 @@
 						"          PHONE_NUMBER as string",
 						"     ),",
 						"     partitionFileNames:['pivot.csv'],",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     partitionBy('hash', 1)) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/df_product_stg')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"folder": {
-					"name": "PROJECT_DATAFLOW"
-				},
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_product",
-								"type": "DatasetReference"
-							},
-							"name": "stgproduct"
-						},
-						{
-							"dataset": {
-								"referenceName": "product_category",
-								"type": "DatasetReference"
-							},
-							"name": "category"
-						},
-						{
-							"dataset": {
-								"referenceName": "prod_sub_catg",
-								"type": "DatasetReference"
-							},
-							"name": "subcat"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "product_dim",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "join1"
-						},
-						{
-							"name": "join2"
-						},
-						{
-							"name": "select1"
-						},
-						{
-							"name": "surrogateKey1"
-						},
-						{
-							"name": "derivedColumn1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          PRODUCT_ID as string,",
-						"          PRODUCT_NAME as string,",
-						"          PRODUCT_PRICE as string,",
-						"          PRODUCT_DESCRIPTION as string,",
-						"          CALORIES as string,",
-						"          IS_ACTIVE as string,",
-						"          PRODUCT_SUBCATEGORY_ID as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> stgproduct",
-						"source(output(",
-						"          PRODUCT_CATEGORY_ID as string,",
-						"          PRODUCT_CATEGORY_NAME as string,",
-						"          PRODUCT_CATEGORY_DESCRIPTION as string,",
-						"          IS_ACTIVE as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> category",
-						"source(output(",
-						"          PRODUCT_SUBCATEGORY_ID as string,",
-						"          PRODUCT_SUBCATEGORY_NAME as string,",
-						"          PRODUCT_SIZE as string,",
-						"          PRODUCT_CATEGORY_ID as string,",
-						"          IS_ACTIVE as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> subcat",
-						"stgproduct, subcat join(stgproduct@PRODUCT_SUBCATEGORY_ID == subcat@PRODUCT_SUBCATEGORY_ID,",
-						"     joinType:'inner',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join1",
-						"join1, category join(subcat@PRODUCT_CATEGORY_ID == category@PRODUCT_CATEGORY_ID,",
-						"     joinType:'inner',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join2",
-						"join2 select(mapColumn(",
-						"          PRODUCT_ID,",
-						"          PRODUCT_NAME,",
-						"          PRODUCT_PRICE,",
-						"          PRODUCT_DESCRIPTION,",
-						"          IS_ACTIVE = stgproduct@IS_ACTIVE,",
-						"          PRODUCT_SUBCATEGORY_ID = stgproduct@PRODUCT_SUBCATEGORY_ID,",
-						"          PRODUCT_SUBCATEGORY_NAME,",
-						"          PRODUCT_SIZE,",
-						"          PRODUCT_CATEGORY_ID = category@PRODUCT_CATEGORY_ID,",
-						"          PRODUCT_CATEGORY_NAME",
-						"     ),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select1",
-						"select1 keyGenerate(output(product_dim_key as long),",
-						"     startAt: 1L,",
-						"     stepValue: 1L) ~> surrogateKey1",
-						"surrogateKey1 derive(stg_create_date = currentDate(),",
-						"          PRODUCT_PRICE = replace(PRODUCT_PRICE, '$', '')) ~> derivedColumn1",
-						"derivedColumn1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     recreate:true,",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
-					]
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/df_window_functions')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "DelimitedText1",
-								"type": "DatasetReference"
-							},
-							"name": "source1",
-							"description": "select employee_id,department_id,salary,\nlead(salary) over ( order by salary ),\nlag(salary) over ( order by salary ) \nFROM employees"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "tgt_emp",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "window1",
-							"description": "Aggregates data based on a window and joins with original data.\nselect employee_id,department_id,salary,\nlead(salary) over ( order by salary ),\nlag(salary) over ( order by salary ) \nFROM employees\n"
-						},
-						{
-							"name": "select1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          EMPLOYEE_ID as string,",
-						"          FIRST_NAME as string,",
-						"          LAST_NAME as string,",
-						"          EMAIL as string,",
-						"          PHONE_NUMBER as string,",
-						"          HIRE_DATE as string,",
-						"          JOB_ID as string,",
-						"          SALARY as string,",
-						"          COMMISSION_PCT as string,",
-						"          MANAGER_ID as string,",
-						"          DEPARTMENT_ID as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 window(asc(SALARY, true),",
-						"     Next_Salary = lead(SALARY),",
-						"          Last_Salary = lag(SALARY)) ~> window1",
-						"window1 select(mapColumn(",
-						"          EMPLOYEE_ID,",
-						"          FIRST_NAME,",
-						"          LAST_NAME,",
-						"          SALARY,",
-						"          DEPARTMENT_ID,",
-						"          Next_Salary,",
-						"          Last_Salary",
-						"     ),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select1",
-						"select1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          EMPLOYEE_ID as string,",
-						"          FIRST_NAME as string,",
-						"          LAST_NAME as string,",
-						"          EMAIL as string,",
-						"          PHONE_NUMBER as string",
-						"     ),",
-						"     partitionFileNames:['window_function.csv'],",
 						"     umask: 0022,",
 						"     preCommands: [],",
 						"     postCommands: [],",
