@@ -1,5 +1,5 @@
 {
-	"name": "pip",
+	"name": "pip_process_latest_files",
 	"properties": {
 		"description": "Get latest filename from the source folder based on the date and process.",
 		"activities": [
