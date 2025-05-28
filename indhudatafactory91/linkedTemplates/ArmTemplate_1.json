@@ -474,8 +474,8 @@
 						}
 					},
 					{
-						"name": "Delete1",
-						"type": "Delete",
+						"name": "ForEach1",
+						"type": "ForEach",
 						"dependsOn": [
 							{
 								"activity": "Get Metadata",
@@ -484,45 +484,59 @@
 								]
 							}
 						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
 						"userProperties": [],
 						"typeProperties": {
-							"dataset": {
-								"referenceName": "ds_adls_dynamic",
-								"type": "DatasetReference",
-								"parameters": {
-									"container": "data",
-									"directory": "parameter_output",
-									"filename": {
-										"value": "@activity('Get Metadata').output.childItems",
-										"type": "Expression"
+							"items": {
+								"value": "@activity('Get Metadata').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Delete1",
+									"type": "Delete",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_adls_dynamic",
+											"type": "DatasetReference",
+											"parameters": {
+												"container": "data",
+												"directory": "parameter_output",
+												"filename": {
+													"value": "@item().name",
+													"type": "Expression"
+												}
+											}
+										},
+										"logStorageSettings": {
+											"linkedServiceName": {
+												"referenceName": "LS_azure_adls",
+												"type": "LinkedServiceReference"
+											},
+											"path": "data/target"
+										},
+										"enableLogging": true,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"modifiedDatetimeStart": "1970-01-01T00:00:00.000Z",
+											"modifiedDatetimeEnd": {
+												"value": "@addDays(utcNow(),-60 )",
+												"type": "Expression"
+											},
+											"enablePartitionDiscovery": false
+										}
 									}
 								}
-							},
-							"logStorageSettings": {
-								"linkedServiceName": {
-									"referenceName": "LS_azure_adls",
-									"type": "LinkedServiceReference"
-								},
-								"path": "data/target"
-							},
-							"enableLogging": true,
-							"storeSettings": {
-								"type": "AzureBlobFSReadSettings",
-								"recursive": true,
-								"modifiedDatetimeStart": "1970-01-01T00:00:00.000Z",
-								"modifiedDatetimeEnd": {
-									"value": "@addDays(utcNow(),-60 )",
-									"type": "Expression"
-								},
-								"enablePartitionDiscovery": false
-							}
+							]
 						}
 					}
 				],
