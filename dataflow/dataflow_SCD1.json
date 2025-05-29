@@ -104,7 +104,12 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> INSemp",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          id,",
+				"          emp_name,",
+				"          dept_id",
+				"     )) ~> INSemp",
 				"UPDalterRow sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
@@ -116,10 +121,16 @@
 				"     insertable:false,",
 				"     updateable:true,",
 				"     upsertable:false,",
+				"     keys:['id'],",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> UPDemp"
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          id,",
+				"          emp_name,",
+				"          dept_id",
+				"     )) ~> UPDemp"
 			]
 		}
 	}
