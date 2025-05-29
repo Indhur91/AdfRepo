@@ -13,6 +13,54 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/customer_email')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "STG_CUSTOMER_EMAIL",
+						"folderPath": "target/AzureProject/Stg",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CUSTOMER_EMAIL_ID",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_EMAIL",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_EMAIL_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_EMAIL_STATUS",
+						"type": "String"
+					},
+					{
+						"name": "CUSTOMER_ID",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/customer_phno')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -996,74 +1044,6 @@
 					},
 					{
 						"name": "STATE_COUNTRY_ID",
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ds_time')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileName": "TIME_DATA",
-						"folderPath": "target/AzureProject/Stg",
-						"fileSystem": "data"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"name": "TIME_KEY",
-						"type": "String"
-					},
-					{
-						"name": "TIME_24HOUR",
-						"type": "String"
-					},
-					{
-						"name": "TIME_12HOUR",
-						"type": "String"
-					},
-					{
-						"name": "AM_PM_INDICATOR",
-						"type": "String"
-					},
-					{
-						"name": "MORNING_FLAG",
-						"type": "String"
-					},
-					{
-						"name": "LUNCHTIME_FLAG",
-						"type": "String"
-					},
-					{
-						"name": "AFTERNOON_FLAG",
-						"type": "String"
-					},
-					{
-						"name": "DINNERTIME_FLAG",
-						"type": "String"
-					},
-					{
-						"name": "EVENING_FLAG",
-						"type": "String"
-					},
-					{
-						"name": "LATE_EVENING_FLAG",
 						"type": "String"
 					}
 				]
