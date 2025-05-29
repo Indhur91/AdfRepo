@@ -1,0 +1,126 @@
+{
+	"name": "dataflow_SCD1",
+	"properties": {
+		"folder": {
+			"name": "learn_it_dataflow"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_adls_dynamic",
+						"type": "DatasetReference"
+					},
+					"name": "empfile"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_azure_sql_table",
+						"type": "DatasetReference"
+					},
+					"name": "lkpsource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_azure_sql_table",
+						"type": "DatasetReference"
+					},
+					"name": "INSemp"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_azure_sql_table",
+						"type": "DatasetReference"
+					},
+					"name": "UPDemp"
+				}
+			],
+			"transformations": [
+				{
+					"name": "lkpInsertUpdate"
+				},
+				{
+					"name": "selectReqColumns"
+				},
+				{
+					"name": "expINSUPD"
+				},
+				{
+					"name": "RTR"
+				},
+				{
+					"name": "UPDalterRow"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id as short,",
+				"          emp_name as string,",
+				"          dept_id as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> empfile",
+				"source(output(",
+				"          id as integer,",
+				"          emp_name as string,",
+				"          dept_id as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> lkpsource",
+				"empfile, lkpsource lookup(empfile@id == lkpsource@id,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lkpInsertUpdate",
+				"lkpInsertUpdate select(mapColumn(",
+				"          id = empfile@id,",
+				"          emp_name = empfile@emp_name,",
+				"          dept_id = empfile@dept_id,",
+				"          LKP_id = lkpsource@id",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectReqColumns",
+				"selectReqColumns derive(v_ins_upd = iif(isNull(LKP_id), \"I\", \"U\")) ~> expINSUPD",
+				"expINSUPD split(v_ins_upd ==\"I\",",
+				"     v_ins_upd ==\"U\",",
+				"     disjoint: false) ~> RTR@(Insert, Update, Default)",
+				"RTR@Update alterRow(updateIf(v_ins_upd ==\"U\")) ~> UPDalterRow",
+				"RTR@Insert sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id as integer,",
+				"          emp_name as string,",
+				"          dept_id as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> INSemp",
+				"UPDalterRow sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id as integer,",
+				"          emp_name as string,",
+				"          dept_id as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> UPDemp"
+			]
+		}
+	}
+}
