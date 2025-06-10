@@ -1,0 +1,73 @@
+{
+	"name": "dataflow_Flatten",
+	"properties": {
+		"description": "Convert a single column data separated by comma into multiple Rows. (SPLIT, FLATTEN)",
+		"folder": {
+			"name": "learn_it_dataflow"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_dynamic_sql_onprem",
+						"type": "DatasetReference"
+					},
+					"name": "srcflattentransformation"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_adls_dynamic",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumnsplit",
+					"description": "splitting the columns to array format"
+				},
+				{
+					"name": "SplitIntoMultipleRows"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Claim_Number as integer,",
+				"          Claimant_Name as string,",
+				"          Claim_Type as string,",
+				"          Location as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> srcflattentransformation",
+				"srcflattentransformation derive(Claim_Type = split(Claim_Type,',')) ~> derivedColumnsplit",
+				"derivedColumnsplit foldDown(unroll(Claim_Type),",
+				"     mapColumn(",
+				"          Claim_Number,",
+				"          Claimant_Name,",
+				"          Claim_Type,",
+				"          Location",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> SplitIntoMultipleRows",
+				"SplitIntoMultipleRows sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Employee_id as string,",
+				"          source_connection as string,",
+				"          target_connection as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1"
+			]
+		}
+	}
+}
