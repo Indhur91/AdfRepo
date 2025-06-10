@@ -6015,6 +6015,41 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/DS_dynamic_sql_onprem')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"schema_name": {
+						"type": "string"
+					},
+					"table_name": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().schema_name",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().table_name",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/DS_onprem_sql')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -9193,6 +9228,85 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/DelimitedText1')]",
 				"[concat(variables('factoryId'), '/datasets/tgt_data')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow_Flatten')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Convert a single column data separated by comma into multiple Rows. (SPLIT, FLATTEN)",
+				"folder": {
+					"name": "learn_it_dataflow"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "srcflattentransformation"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_dynamic",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "derivedColumnsplit",
+							"description": "splitting the columns to array format"
+						},
+						{
+							"name": "SplitIntoMultipleRows"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Claim_Number as integer,",
+						"          Claimant_Name as string,",
+						"          Claim_Type as string,",
+						"          Location as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> srcflattentransformation",
+						"srcflattentransformation derive(Claim_Type = split(Claim_Type,',')) ~> derivedColumnsplit",
+						"derivedColumnsplit foldDown(unroll(Claim_Type),",
+						"     mapColumn(",
+						"          Claim_Number,",
+						"          Claimant_Name,",
+						"          Claim_Type,",
+						"          Location",
+						"     ),",
+						"     skipDuplicateMapInputs: false,",
+						"     skipDuplicateMapOutputs: false) ~> SplitIntoMultipleRows",
+						"SplitIntoMultipleRows sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Employee_id as string,",
+						"          source_connection as string,",
+						"          target_connection as string",
+						"     ),",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_dynamic_sql_onprem')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adls_dynamic')]"
 			]
 		},
 		{
@@ -12389,6 +12503,21 @@
 				"[concat(variables('factoryId'), '/datasets/DelimitedText1')]",
 				"[concat(variables('factoryId'), '/datasets/tgt_emp')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline2')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "ADF_TRAINING_NEW"
+				},
+				"annotations": []
+			},
+			"dependsOn": []
 		}
 	]
 }
