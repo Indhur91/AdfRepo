@@ -9008,6 +9008,170 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/assert_tranformation')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "learn_it_dataflow"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "SRCassert"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "ASSERTLOCATIONPRIMARY"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_target",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "ValidiationCheck"
+						},
+						{
+							"name": "ErrorPresentValidate"
+						},
+						{
+							"name": "split1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Claim_ID as integer,",
+						"          claimant_name as string,",
+						"          claim_amount as integer,",
+						"          claim_Date as string,",
+						"          location_id as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SRCassert",
+						"source(output(",
+						"          location_id as integer,",
+						"          location_name as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ASSERTLOCATIONPRIMARY",
+						"SRCassert, ASSERTLOCATIONPRIMARY assert(expectUnique(Claim_ID, false, 'DistinctClaimId'),",
+						"     expectTrue(! isNull(toDate(claim_Date,'yyyy-MM-dd')), false, 'claimDateValidation'),",
+						"     expectExists(SRCassert@location_id == ASSERTLOCATIONPRIMARY@location_id, false, 'LocationExists')) ~> ValidiationCheck",
+						"ValidiationCheck derive(ErrorPresent = isError(),",
+						"          ForiegnKeyError = hasError('LocationExists'),",
+						"          correctDate = hasError('claimDateValidation'),",
+						"          PrimarykeyError = hasError('DistinctClaimId')) ~> ErrorPresentValidate",
+						"ErrorPresentValidate split(PrimarykeyError == true(),",
+						"     ForiegnKeyError ==true(),",
+						"     correctDate ==true(),",
+						"     disjoint: false) ~> split1@(primarykeyerror, foriegnkeyerror, invaliddate, GoodRows)",
+						"split1@primarykeyerror sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_dynamic_sql_onprem')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adls_target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/collect_list')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "learn_it_dataflow"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "listaggtransformation"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_dynamic",
+								"type": "DatasetReference"
+							},
+							"name": "sink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "aggregate1"
+						},
+						{
+							"name": "derivedColumn1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Claim_Number as integer,",
+						"          Claimant_Name as string,",
+						"          Claim_Type as string,",
+						"          Location as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> listaggtransformation",
+						"listaggtransformation aggregate(groupBy(Claim_Number,",
+						"          Claimant_Name,",
+						"          Location),",
+						"     collectClaimType = collect(Claim_Type)) ~> aggregate1",
+						"aggregate1 derive(collect_claim_type = replace(replace(replace(toString(collectClaimType),'\"',''),'[',''),']','')) ~> derivedColumn1",
+						"derivedColumn1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Employee_id as string,",
+						"          source_connection as string,",
+						"          target_connection as string",
+						"     ),",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_dynamic_sql_onprem')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adls_dynamic')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -12569,7 +12733,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/assert_tranformation')]",
+			"name": "[concat(parameters('factoryName'), '/pivot')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -12584,80 +12748,58 @@
 								"referenceName": "DS_dynamic_sql_onprem",
 								"type": "DatasetReference"
 							},
-							"name": "SRCassert"
-						},
-						{
-							"dataset": {
-								"referenceName": "DS_dynamic_sql_onprem",
-								"type": "DatasetReference"
-							},
-							"name": "ASSERTLOCATIONPRIMARY"
+							"name": "sourceEventEquipmentUsage"
 						}
 					],
 					"sinks": [
 						{
 							"dataset": {
-								"referenceName": "ds_adls_target",
+								"referenceName": "ds_adls_dynamic",
 								"type": "DatasetReference"
 							},
-							"name": "sink1"
+							"name": "sink"
 						}
 					],
 					"transformations": [
 						{
-							"name": "ValidiationCheck"
-						},
-						{
-							"name": "ErrorPresentValidate"
-						},
-						{
-							"name": "split1"
+							"name": "MultipleRowIntoSingleRow"
 						}
 					],
 					"scriptLines": [
 						"source(output(",
-						"          Claim_ID as integer,",
-						"          claimant_name as string,",
-						"          claim_amount as integer,",
-						"          claim_Date as string,",
-						"          location_id as integer",
+						"          Event_ID as integer,",
+						"          Equipment as string,",
+						"          Location as string,",
+						"          TotalUsage as integer",
 						"     ),",
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> SRCassert",
-						"source(output(",
-						"          location_id as integer,",
-						"          location_name as string",
+						"     format: 'table') ~> sourceEventEquipmentUsage",
+						"sourceEventEquipmentUsage pivot(groupBy(Event_ID,",
+						"          Location),",
+						"     pivotBy(Equipment),",
+						"     TotalUsage = max(TotalUsage),",
+						"     columnNaming: '$N$V',",
+						"     lateral: true) ~> MultipleRowIntoSingleRow",
+						"MultipleRowIntoSingleRow sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Employee_id as string,",
+						"          source_connection as string,",
+						"          target_connection as string",
 						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> ASSERTLOCATIONPRIMARY",
-						"SRCassert, ASSERTLOCATIONPRIMARY assert(expectUnique(Claim_ID, false, 'DistinctClaimId'),",
-						"     expectTrue(! isNull(toDate(claim_Date,'yyyy-MM-dd')), false, 'claimDateValidation'),",
-						"     expectExists(SRCassert@location_id == ASSERTLOCATIONPRIMARY@location_id, false, 'LocationExists')) ~> ValidiationCheck",
-						"ValidiationCheck derive(ErrorPresent = isError(),",
-						"          ForiegnKeyError = hasError('LocationExists'),",
-						"          correctDate = hasError('claimDateValidation'),",
-						"          PrimarykeyError = hasError('DistinctClaimId')) ~> ErrorPresentValidate",
-						"ErrorPresentValidate split(PrimarykeyError == true(),",
-						"     ForiegnKeyError ==true(),",
-						"     correctDate ==true(),",
-						"     disjoint: false) ~> split1@(primarykeyerror, foriegnkeyerror, invaliddate, GoodRows)",
-						"split1@primarykeyerror sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
 						"     umask: 0022,",
 						"     preCommands: [],",
 						"     postCommands: [],",
 						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> sink1"
+						"     skipDuplicateMapOutputs: true) ~> sink"
 					]
 				}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/DS_dynamic_sql_onprem')]",
-				"[concat(variables('factoryId'), '/datasets/ds_adls_target')]"
+				"[concat(variables('factoryId'), '/datasets/ds_adls_dynamic')]"
 			]
 		}
 	]

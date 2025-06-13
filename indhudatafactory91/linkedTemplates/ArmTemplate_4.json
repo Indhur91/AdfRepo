@@ -13,6 +13,164 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/assert_tranformation')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "learn_it_dataflow"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "SRCassert"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "ASSERTLOCATIONPRIMARY"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_target",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "ValidiationCheck"
+						},
+						{
+							"name": "ErrorPresentValidate"
+						},
+						{
+							"name": "split1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Claim_ID as integer,",
+						"          claimant_name as string,",
+						"          claim_amount as integer,",
+						"          claim_Date as string,",
+						"          location_id as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SRCassert",
+						"source(output(",
+						"          location_id as integer,",
+						"          location_name as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ASSERTLOCATIONPRIMARY",
+						"SRCassert, ASSERTLOCATIONPRIMARY assert(expectUnique(Claim_ID, false, 'DistinctClaimId'),",
+						"     expectTrue(! isNull(toDate(claim_Date,'yyyy-MM-dd')), false, 'claimDateValidation'),",
+						"     expectExists(SRCassert@location_id == ASSERTLOCATIONPRIMARY@location_id, false, 'LocationExists')) ~> ValidiationCheck",
+						"ValidiationCheck derive(ErrorPresent = isError(),",
+						"          ForiegnKeyError = hasError('LocationExists'),",
+						"          correctDate = hasError('claimDateValidation'),",
+						"          PrimarykeyError = hasError('DistinctClaimId')) ~> ErrorPresentValidate",
+						"ErrorPresentValidate split(PrimarykeyError == true(),",
+						"     ForiegnKeyError ==true(),",
+						"     correctDate ==true(),",
+						"     disjoint: false) ~> split1@(primarykeyerror, foriegnkeyerror, invaliddate, GoodRows)",
+						"split1@primarykeyerror sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/collect_list')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "learn_it_dataflow"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "listaggtransformation"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_dynamic",
+								"type": "DatasetReference"
+							},
+							"name": "sink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "aggregate1"
+						},
+						{
+							"name": "derivedColumn1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Claim_Number as integer,",
+						"          Claimant_Name as string,",
+						"          Claim_Type as string,",
+						"          Location as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> listaggtransformation",
+						"listaggtransformation aggregate(groupBy(Claim_Number,",
+						"          Claimant_Name,",
+						"          Location),",
+						"     collectClaimType = collect(Claim_Type)) ~> aggregate1",
+						"aggregate1 derive(collect_claim_type = replace(replace(replace(toString(collectClaimType),'\"',''),'[',''),']','')) ~> derivedColumn1",
+						"derivedColumn1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Employee_id as string,",
+						"          source_connection as string,",
+						"          target_connection as string",
+						"     ),",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/dataflow_Flatten')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -606,7 +764,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/assert_tranformation')]",
+			"name": "[concat(parameters('factoryName'), '/pivot')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -621,74 +779,52 @@
 								"referenceName": "DS_dynamic_sql_onprem",
 								"type": "DatasetReference"
 							},
-							"name": "SRCassert"
-						},
-						{
-							"dataset": {
-								"referenceName": "DS_dynamic_sql_onprem",
-								"type": "DatasetReference"
-							},
-							"name": "ASSERTLOCATIONPRIMARY"
+							"name": "sourceEventEquipmentUsage"
 						}
 					],
 					"sinks": [
 						{
 							"dataset": {
-								"referenceName": "ds_adls_target",
+								"referenceName": "ds_adls_dynamic",
 								"type": "DatasetReference"
 							},
-							"name": "sink1"
+							"name": "sink"
 						}
 					],
 					"transformations": [
 						{
-							"name": "ValidiationCheck"
-						},
-						{
-							"name": "ErrorPresentValidate"
-						},
-						{
-							"name": "split1"
+							"name": "MultipleRowIntoSingleRow"
 						}
 					],
 					"scriptLines": [
 						"source(output(",
-						"          Claim_ID as integer,",
-						"          claimant_name as string,",
-						"          claim_amount as integer,",
-						"          claim_Date as string,",
-						"          location_id as integer",
+						"          Event_ID as integer,",
+						"          Equipment as string,",
+						"          Location as string,",
+						"          TotalUsage as integer",
 						"     ),",
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> SRCassert",
-						"source(output(",
-						"          location_id as integer,",
-						"          location_name as string",
+						"     format: 'table') ~> sourceEventEquipmentUsage",
+						"sourceEventEquipmentUsage pivot(groupBy(Event_ID,",
+						"          Location),",
+						"     pivotBy(Equipment),",
+						"     TotalUsage = max(TotalUsage),",
+						"     columnNaming: '$N$V',",
+						"     lateral: true) ~> MultipleRowIntoSingleRow",
+						"MultipleRowIntoSingleRow sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Employee_id as string,",
+						"          source_connection as string,",
+						"          target_connection as string",
 						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> ASSERTLOCATIONPRIMARY",
-						"SRCassert, ASSERTLOCATIONPRIMARY assert(expectUnique(Claim_ID, false, 'DistinctClaimId'),",
-						"     expectTrue(! isNull(toDate(claim_Date,'yyyy-MM-dd')), false, 'claimDateValidation'),",
-						"     expectExists(SRCassert@location_id == ASSERTLOCATIONPRIMARY@location_id, false, 'LocationExists')) ~> ValidiationCheck",
-						"ValidiationCheck derive(ErrorPresent = isError(),",
-						"          ForiegnKeyError = hasError('LocationExists'),",
-						"          correctDate = hasError('claimDateValidation'),",
-						"          PrimarykeyError = hasError('DistinctClaimId')) ~> ErrorPresentValidate",
-						"ErrorPresentValidate split(PrimarykeyError == true(),",
-						"     ForiegnKeyError ==true(),",
-						"     correctDate ==true(),",
-						"     disjoint: false) ~> split1@(primarykeyerror, foriegnkeyerror, invaliddate, GoodRows)",
-						"split1@primarykeyerror sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
 						"     umask: 0022,",
 						"     preCommands: [],",
 						"     postCommands: [],",
 						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> sink1"
+						"     skipDuplicateMapOutputs: true) ~> sink"
 					]
 				}
 			},
@@ -2338,482 +2474,6 @@
 									}
 								}
 							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"variables": {
-					"StartDate": {
-						"type": "String"
-					},
-					"sourcetable": {
-						"type": "String"
-					},
-					"dummy": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"lastPublishTime": "2024-11-05T17:54:54Z"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pip_dataload_2_config')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Lookup1",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "OracleSource",
-								"oracleReaderQuery": "select * from hr.config where activeflag = 2",
-								"partitionOption": "None",
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "SRC_OracleTable",
-								"type": "DatasetReference",
-								"parameters": {}
-							},
-							"firstRowOnly": false
-						}
-					},
-					{
-						"name": "ForEach1",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "Lookup1",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('Lookup1').output.value",
-								"type": "Expression"
-							},
-							"batchCount": 5,
-							"activities": [
-								{
-									"name": "Copy data1",
-									"type": "Copy",
-									"dependsOn": [
-										{
-											"activity": "Set variable1",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "OracleSource",
-											"oracleReaderQuery": {
-												"value": "@item().query",
-												"type": "Expression"
-											},
-											"partitionOption": "None",
-											"convertDecimalToInteger": false,
-											"queryTimeout": "02:00:00"
-										},
-										"sink": {
-											"type": "DelimitedTextSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
-											},
-											"formatSettings": {
-												"type": "DelimitedTextWriteSettings",
-												"quoteAllText": true,
-												"fileExtension": ".txt"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "SRC_DataLoad",
-											"type": "DatasetReference",
-											"parameters": {
-												"sourcetable": {
-													"value": "@item().sourcetable",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "tgt_DataLoad",
-											"type": "DatasetReference",
-											"parameters": {
-												"tgtfiles": {
-													"value": "@item().tarettable",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								},
-								{
-									"name": "Set variable1",
-									"type": "SetVariable",
-									"dependsOn": [],
-									"policy": {
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"variableName": "StartDate",
-										"value": {
-											"value": "@utcNow()",
-											"type": "Expression"
-										}
-									}
-								},
-								{
-									"name": "Script1",
-									"type": "Script",
-									"dependsOn": [
-										{
-											"activity": "Copy data1",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"linkedServiceName": {
-										"referenceName": "Oracle",
-										"type": "LinkedServiceReference"
-									},
-									"typeProperties": {
-										"scripts": [
-											{
-												"type": "Query",
-												"text": {
-													"value": "@concat(\n'update hr.config set startdate = ''', variables('StartDate'),\n''', enddate = ''', utcNow(),\n''', status = ''success'',\nsource = ', activity('Copy data1').output.rowsRead, ' ,\ntarget = ', activity('Copy data1').output.rowsCopied,' \nwhere sourcetable = ''', item().sourcetable, ''''\n)\n",
-													"type": "Expression"
-												}
-											}
-										],
-										"scriptBlockExecutionTimeout": "02:00:00"
-									}
-								}
-							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"variables": {
-					"StartDate": {
-						"type": "String"
-					},
-					"sourcetable": {
-						"type": "String"
-					},
-					"dummy": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"lastPublishTime": "2024-11-27T02:42:16Z"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pip_dataload_failure')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Lookup1",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "OracleSource",
-								"oracleReaderQuery": "select * from hr.config where activeflag = 1",
-								"partitionOption": "None",
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "SRC_OracleTable",
-								"type": "DatasetReference",
-								"parameters": {}
-							},
-							"firstRowOnly": false
-						}
-					},
-					{
-						"name": "ForEach1",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "Script3",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('Lookup1').output.value",
-								"type": "Expression"
-							},
-							"activities": [
-								{
-									"name": "Copy data1",
-									"type": "Copy",
-									"dependsOn": [
-										{
-											"activity": "Set variable1",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "OracleSource",
-											"oracleReaderQuery": {
-												"value": "@item().query",
-												"type": "Expression"
-											},
-											"partitionOption": "None",
-											"convertDecimalToInteger": false,
-											"queryTimeout": "02:00:00"
-										},
-										"sink": {
-											"type": "DelimitedTextSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
-											},
-											"formatSettings": {
-												"type": "DelimitedTextWriteSettings",
-												"quoteAllText": true,
-												"fileExtension": ".txt"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "SRC_DataLoad",
-											"type": "DatasetReference",
-											"parameters": {
-												"sourcetable": {
-													"value": "@item().sourcetable",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "tgt_DataLoad",
-											"type": "DatasetReference",
-											"parameters": {
-												"tgtfiles": {
-													"value": "@item().tarettable",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								},
-								{
-									"name": "Set variable1",
-									"type": "SetVariable",
-									"dependsOn": [],
-									"policy": {
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"variableName": "StartDate",
-										"value": {
-											"value": "@int(utcNow())",
-											"type": "Expression"
-										}
-									}
-								},
-								{
-									"name": "Script1",
-									"type": "Script",
-									"dependsOn": [
-										{
-											"activity": "Copy data1",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"linkedServiceName": {
-										"referenceName": "Oracle",
-										"type": "LinkedServiceReference"
-									},
-									"typeProperties": {
-										"scripts": [
-											{
-												"type": "Query",
-												"text": {
-													"value": "@concat('update hr.config set startdate =  ''',variables('StartDate'),''' ,enddate = ''',utcNow(),''' ,status = ''success'' where sourcetable = ''',item().sourcetable,'''')",
-													"type": "Expression"
-												}
-											}
-										],
-										"scriptBlockExecutionTimeout": "02:00:00"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "Script2",
-						"type": "Script",
-						"dependsOn": [
-							{
-								"activity": "ForEach1",
-								"dependencyConditions": [
-									"Failed"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"linkedServiceName": {
-							"referenceName": "Oracle",
-							"type": "LinkedServiceReference"
-						},
-						"typeProperties": {
-							"scripts": [
-								{
-									"type": "Query",
-									"text": {
-										"value": "@concat('update hr.config set status =''failed ''', 'where activeflag = 1 and status is null')",
-										"type": "Expression"
-									}
-								}
-							],
-							"scriptBlockExecutionTimeout": "02:00:00"
-						}
-					},
-					{
-						"name": "Script3",
-						"type": "Script",
-						"dependsOn": [
-							{
-								"activity": "Lookup1",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"linkedServiceName": {
-							"referenceName": "Oracle",
-							"type": "LinkedServiceReference"
-						},
-						"typeProperties": {
-							"scripts": [
-								{
-									"type": "Query",
-									"text": "update  hr.config set status = null where activeflag =1"
-								}
-							],
-							"scriptBlockExecutionTimeout": "02:00:00"
 						}
 					}
 				],
