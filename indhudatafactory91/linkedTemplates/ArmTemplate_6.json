@@ -13,6 +13,180 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/df_PRODUCT_TOPPINGS_DIM_scd2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "PROJECT_DATAFLOW"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable_PRODUCT_TOPPINGS_DIM",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_product_toppings",
+								"type": "DatasetReference"
+							},
+							"name": "source2"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable_PRODUCT_TOPPINGS_DIM",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable_PRODUCT_TOPPINGS_DIM",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "select1"
+						},
+						{
+							"name": "lookup1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "updatefilter"
+						},
+						{
+							"name": "Insertfilter"
+						},
+						{
+							"name": "alterRow1"
+						},
+						{
+							"name": "filter1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Product_Topping_Dim_Key as integer,",
+						"          Product_Topping_ID as integer,",
+						"          Topping_Name as string,",
+						"          Topping_Price as decimal(5,2),",
+						"          Is_Active as string,",
+						"          Effective_Date as date,",
+						"          END_DATE as date,",
+						"          Flag as string,",
+						"          DM_CREATE_DATE as date",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"source(output(",
+						"          PRODUCT_TOPPING_ID as integer,",
+						"          TOPPING_NAME as string,",
+						"          TOPING_PRICE as string,",
+						"          IS_ACTIVE as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source2",
+						"source2 select(mapColumn(",
+						"          src_PRODUCT_TOPPING_ID = PRODUCT_TOPPING_ID,",
+						"          src_TOPPING_NAME = TOPPING_NAME,",
+						"          src_TOPING_PRICE = TOPING_PRICE,",
+						"          src_IS_ACTIVE = IS_ACTIVE",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1, filter1 lookup(src_PRODUCT_TOPPING_ID == Product_Topping_ID,",
+						"     multiple: true,",
+						"     broadcast: 'auto')~> lookup1",
+						"lookup1 derive(src_md5 = md5(concat(src_TOPPING_NAME,toString(src_TOPING_PRICE))),",
+						"          tgt_md5 = md5(concat(Topping_Name,toString(Topping_Price))),",
+						"          DM_CREATE_DATE = currentDate(),",
+						"          Effective_date = currentDate(),",
+						"          END_DATE = currentDate(),",
+						"          ACTIVE_FLAG = 'Y',",
+						"          INACTIVE_FLAG = 'N') ~> derivedColumn1",
+						"derivedColumn1 filter(!isNull(Product_Topping_ID) && src_md5 != tgt_md5) ~> updatefilter",
+						"derivedColumn1 filter(isNull(Product_Topping_ID) || src_md5 != tgt_md5) ~> Insertfilter",
+						"updatefilter alterRow(updateIf(1==1)) ~> alterRow1",
+						"source1 filter(Flag=='Y') ~> filter1",
+						"Insertfilter sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Product_Topping_Dim_Key as integer,",
+						"          Product_Topping_ID as integer,",
+						"          Topping_Name as string,",
+						"          Topping_Price as decimal(5,2),",
+						"          Is_Active as string,",
+						"          Effective_Date as date,",
+						"          END_DATE as date,",
+						"          Flag as string,",
+						"          DM_CREATE_DATE as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Product_Topping_ID = src_PRODUCT_TOPPING_ID,",
+						"          Topping_Name = src_TOPPING_NAME,",
+						"          Topping_Price = src_TOPING_PRICE,",
+						"          Is_Active = src_IS_ACTIVE,",
+						"          Effective_Date = derivedColumn1@Effective_date,",
+						"          Flag = ACTIVE_FLAG,",
+						"          DM_CREATE_DATE",
+						"     )) ~> sink1",
+						"alterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Product_Topping_Dim_Key as integer,",
+						"          Product_Topping_ID as integer,",
+						"          Topping_Name as string,",
+						"          Topping_Price as decimal(5,2),",
+						"          Is_Active as string,",
+						"          Effective_Date as date,",
+						"          END_DATE as date,",
+						"          Flag as string,",
+						"          DM_CREATE_DATE as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:true,",
+						"     upsertable:false,",
+						"     keys:['Product_Topping_Dim_Key'],",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Product_Topping_Dim_Key,",
+						"          END_DATE,",
+						"          Flag = INACTIVE_FLAG",
+						"     )) ~> sink2"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/df_PROMOTION_DIM_SCD3')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
@@ -2239,7 +2413,9 @@
 				"annotations": [],
 				"lastPublishTime": "2024-12-17T03:20:37Z"
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/df_PRODUCT_TOPPINGS_DIM_scd2')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/pip_PROMOTION_SCD3')]",
@@ -2288,63 +2464,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/df_PROMOTION_DIM_SCD3')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pip_SALES_FACT')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow1",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "df_fact",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"order": {},
-									"OrderLines": {},
-									"customer": {},
-									"locationdim": {},
-									"productdim": {},
-									"ProductTopping": {},
-									"promotions": {},
-									"payment": {},
-									"channel": {},
-									"DeliveryType": {},
-									"date": {},
-									"sink1": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": [],
-				"lastPublishTime": "2024-12-19T02:28:09Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/df_fact')]"
 			]
 		}
 	]

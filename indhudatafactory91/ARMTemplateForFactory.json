@@ -12567,6 +12567,98 @@
 				"[concat(variables('factoryId'), '/datasets/DelimitedText1')]",
 				"[concat(variables('factoryId'), '/datasets/tgt_emp')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/assert_tranformation')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "learn_it_dataflow"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "SRCassert"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_dynamic_sql_onprem",
+								"type": "DatasetReference"
+							},
+							"name": "ASSERTLOCATIONPRIMARY"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_target",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "ValidiationCheck"
+						},
+						{
+							"name": "ErrorPresentValidate"
+						},
+						{
+							"name": "split1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Claim_ID as integer,",
+						"          claimant_name as string,",
+						"          claim_amount as integer,",
+						"          claim_Date as string,",
+						"          location_id as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SRCassert",
+						"source(output(",
+						"          location_id as integer,",
+						"          location_name as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ASSERTLOCATIONPRIMARY",
+						"SRCassert, ASSERTLOCATIONPRIMARY assert(expectUnique(Claim_ID, false, 'DistinctClaimId'),",
+						"     expectTrue(! isNull(toDate(claim_Date,'yyyy-MM-dd')), false, 'claimDateValidation'),",
+						"     expectExists(SRCassert@location_id == ASSERTLOCATIONPRIMARY@location_id, false, 'LocationExists')) ~> ValidiationCheck",
+						"ValidiationCheck derive(ErrorPresent = isError(),",
+						"          ForiegnKeyError = hasError('LocationExists'),",
+						"          correctDate = hasError('claimDateValidation'),",
+						"          PrimarykeyError = hasError('DistinctClaimId')) ~> ErrorPresentValidate",
+						"ErrorPresentValidate split(PrimarykeyError == true(),",
+						"     ForiegnKeyError ==true(),",
+						"     correctDate ==true(),",
+						"     disjoint: false) ~> split1@(primarykeyerror, foriegnkeyerror, invaliddate, GoodRows)",
+						"split1@primarykeyerror sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_dynamic_sql_onprem')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adls_target')]"
+			]
 		}
 	]
 }
