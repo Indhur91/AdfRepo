@@ -1,0 +1,66 @@
+{
+	"name": "collect_list",
+	"properties": {
+		"folder": {
+			"name": "learn_it_dataflow"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_dynamic_sql_onprem",
+						"type": "DatasetReference"
+					},
+					"name": "listaggtransformation"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_adls_dynamic",
+						"type": "DatasetReference"
+					},
+					"name": "sink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Claim_Number as integer,",
+				"          Claimant_Name as string,",
+				"          Claim_Type as string,",
+				"          Location as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> listaggtransformation",
+				"listaggtransformation aggregate(groupBy(Claim_Number,",
+				"          Claimant_Name,",
+				"          Location),",
+				"     collectClaimType = collect(Claim_Type)) ~> aggregate1",
+				"aggregate1 derive(collect_claim_type = replace(replace(replace(toString(collectClaimType),'\"',''),'[',''),']','')) ~> derivedColumn1",
+				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Employee_id as string,",
+				"          source_connection as string,",
+				"          target_connection as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink"
+			]
+		}
+	}
+}
